@@ -171,12 +171,9 @@ if pagina == "Propagação de Ondas em Tempo Real (Planta)":
             x_p, y_p = X_grid[i, j], Y_grid[i, j]
             dist = np.sqrt((x_p - pos_roteador_x)**2 + (y_p - pos_roteador_y)**2)
             
-            # Simulação física de barreiras estruturais da planta (Paredes divisórias)
             paredes_travessia = 0
-            # Parede horizontal central (Y = 4.0)
             if (4.0 <= y_p <= 4.3) and not (3.5 <= x_p <= 6.5): 
                 paredes_travessia += 1
-            # Parede vertical divisória de quartos (X = 5.0, Y > 4.0)
             if (4.8 <= x_p <= 5.2) and (y_p >= 4.0):
                 paredes_travessia += 1
 
@@ -184,7 +181,6 @@ if pagina == "Propagação de Ondas em Tempo Real (Planta)":
             rssi_base = estimar_rssi(dist, obstaculos=paredes_travessia + (2 if dist > 4 else 0))
             Z_wave[i, j] = rssi_base + onda_senoidal
 
-    # Gráfico de Contorno (Ondas)
     fig_wave = go.Figure(data=go.Contour(
         z=Z_wave,
         x=x_vals,
@@ -195,23 +191,17 @@ if pagina == "Propagação de Ondas em Tempo Real (Planta)":
     ))
 
     # Desenho das Paredes Estruturais da Planta Baixa (Linhas Brancas)
-    # Contorno Externo da Casa
     fig_wave.add_shape(type="rect", x0=0, y0=0, x1=10, y1=8, line=dict(color="white", width=3))
-    # Parede Horizontal Central (Corredor / Divisão Social x Íntima)
     fig_wave.add_shape(type="line", x0=0, y0=4, x1=3.5, y1=4, line=dict(color="white", width=2))
     fig_wave.add_shape(type="line", x0=6.5, y0=4, x1=10, y1=4, line=dict(color="white", width=2))
-    # Parede Vertical (Divisão entre Quartos)
     fig_wave.add_shape(type="line", x0=5, y0=4, x1=5, y1=8, line=dict(color="white", width=2))
-    # Parede da Cozinha / Banheiro
     fig_wave.add_shape(type="line", x0=3.5, y0=0, x1=3.5, y1=2.5, line=dict(color="white", width=2))
 
-    # Rótulos dos Cômodos na Planta
     fig_wave.add_annotation(x=2.0, y=6.0, text="<b>Sala de Estar</b>", showarrow=False, font=dict(color="white", size=11))
     fig_wave.add_annotation(x=7.5, y=6.0, text="<b>Cozinha / Área</b>", showarrow=False, font=dict(color="white", size=11))
     fig_wave.add_annotation(x=2.5, y=2.0, text="<b>Quarto 1</b>", showarrow=False, font=dict(color="white", size=11))
     fig_wave.add_annotation(x=7.5, y=2.0, text="<b>Quarto 2 (Suíte)</b>", showarrow=False, font=dict(color="white", size=11))
 
-    # Ponto do Roteador Wi-Fi
     fig_wave.add_trace(go.Scatter(
         x=[pos_roteador_x],
         y=[pos_roteador_y],
@@ -235,9 +225,8 @@ if pagina == "Propagação de Ondas em Tempo Real (Planta)":
     st.plotly_chart(fig_wave, use_container_width=True)
 
     st.success(
-        "🏠 **Simulação Realista:** As linhas brancas delimitam os cômodos da residência (Salas, Quartos e Cozinha). "
-        "À medida que alteras a posição do roteador (estrela vermelha), as frentes de onda sofrem atenuação e desvio "
-        "ao colidirem com as paredes estruturais, ilustrando perfeitamente o comportamento físico real de propagação em campo."
+        "🏠 **Simulação Realista:** As linhas brancas delimitam os cômodos da residência. "
+        "As frentes de onda propagam-se dinamicamente a partir do roteador e sofrem atenuação ao colidirem com as paredes."
     )
 
 # =========================
@@ -431,42 +420,5 @@ elif pagina == "Consultoria Comercial & Upgrade Mesh (ISP)":
             <p><b>Causa Raiz (IA):</b> Atenuação severa de <b>{abs(-40 - rssi_critico):.1f} dB</b> devido a {paredes_criticas} paredes e distância de {dist_critica}m.</p>
             <hr style="border-color: #30363d;">
             <h4 style="color: #3fb950; margin-bottom: 5px;">💡 Solução Recomendada para o ISP:</h4>
-            <p>Instalação de <b>{nos_recomendados} Roteador(es) Wi-Fi Mesh adicional(is)</b> para entrega integral dos {plano_atual} Mbps contratados em 100% da residência.</p>
-            <h4 style="color: #58a6ff; margin-bottom: 5px; margin-top: 15px;">💰 Proposta de Upsell Gerada Automaticamente:</h4>
-            <p style="font-size: 18px; color: #ffffff;"><b>Adicional de R$ {valor_mensalidade_mesh:.2f} / mês</b> no plano do cliente (Serviço de Cobertura Total Garantida).</p>
-            <p style="font-size: 12px; color: #8b949e; margin-bottom: 0;">Retorno financeiro estimado para o provedor: Zero Churn + Fidelização de Longo Prazo.</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.success("Proposta comercial calculada e formatada com sucesso!")
-
-# =========================
-# 5. SIMULADOR TÉRMICO GERAL
-# =========================
-elif pagina == "Simulador Térmico Geral":
-    st.subheader("🗺️ Mapa Térmico Espacial de Cobertura")
-
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        largura = st.number_input("Largura (m)", 2.0, 30.0, 10.0, 0.5)
-    with c2:
-        comprimento = st.number_input("Comprimento (m)", 2.0, 30.0, 8.0, 0.5)
-    with c3:
-        obstaculos = st.number_input("Obstáculos Médios", 0, 10, 2, 1)
-
-    xs = np.linspace(0, largura, 30)
-    ys = np.linspace(0, comprimento, 30)
-    XX, YY = np.meshgrid(xs, ys)
-    distancias = np.sqrt((XX - largura/2)**2 + (YY - comprimento/2)**2)
-
-    Z = np.zeros_like(distancias)
-    for i in range(Z.shape[0]):
-        for j in range(Z.shape[1]):
-            Z[i, j] = estimar_rssi(distancias[i, j], obstaculos)
-
-    fig, ax = plt.subplots(figsize=(9, 4.5))
-    fig.patch.set_facecolor('#0e1117')
-    ax.set_facecolor('#1b212c')
-    
-    mapa = ax.imshow(Z, origin="lower", extent=[0, largura, 0, comprimento], aspect="auto", cmap="RdYlGn", vmin=-90, vmax=-40)
-    ax.scatter([largur
+            <p>Instalação de <b>{nos_recomendados} Roteador(es) Wi-Fi Mesh adicional(is)</b> para entrega
+            
