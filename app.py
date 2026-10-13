@@ -1,4 +1,3 @@
-
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -146,7 +145,7 @@ st.sidebar.divider()
 st.sidebar.caption("WiFiLab | Protótipo Académico TCC")
 
 # =========================
-# 1. PROPAGAÇÃO DE ONDAS EM TEMPO REAL (NOVO!)
+# 1. PROPAGAÇÃO DE ONDAS EM TEMPO REAL
 # =========================
 if pagina == "Propagação de Ondas em Tempo Real (Planta)":
     st.subheader("🌊 Simulação Dinâmica de Ondas Wi-Fi sobre Planta Residencial")
@@ -161,23 +160,19 @@ if pagina == "Propagação de Ondas em Tempo Real (Planta)":
     with c_pos2:
         pos_roteador_y = st.slider("Posição Y do Roteador na Planta", 1.0, 7.0, 1.5, 0.5)
 
-    # Geração de grade espacial representando a planta residencial do vídeo
     res = 60
     x_vals = np.linspace(0, 10, res)
     y_vals = np.linspace(0, 8, res)
     X_grid, Y_grid = np.meshgrid(x_vals, y_vals)
 
-    # Simulação física de frentes de onda concêntricas combinadas com atenuação de barreiras (RNA)
     Z_wave = np.zeros_like(X_grid)
     for i in range(res):
         for j in range(res):
             dist = np.sqrt((X_grid[i, j] - pos_roteador_x)**2 + (Y_grid[i, j] - pos_roteador_y)**2)
-            # Simulação do efeito de interferência construtiva/destrutiva de ondas (frequencia visível)
             onda_senoidal = np.sin(dist * 6.0) * 4.0 
             rssi_base = estimar_rssi(dist, obstaculos=2 if dist > 3.5 else 0)
             Z_wave[i, j] = rssi_base + onda_senoidal
 
-    # Gráfico Contour/Heatmap interativo imitando o comportamento do vídeo
     fig_wave = go.Figure(data=go.Contour(
         z=Z_wave,
         x=x_vals,
@@ -187,7 +182,6 @@ if pagina == "Propagação de Ondas em Tempo Real (Planta)":
         colorbar=dict(title="Intensidade (dBm)")
     ))
 
-    # Ponto do Roteador
     fig_wave.add_trace(go.Scatter(
         x=[pos_roteador_x],
         y=[pos_roteador_y],
@@ -212,7 +206,7 @@ if pagina == "Propagação de Ondas em Tempo Real (Planta)":
 
     st.success(
         "📡 **Análise Didática:** As linhas concêntricas refletem as frentes de onda emitidas pelo equipamento. "
-        "As zonas mais quentes (amarelo/verde brilhante) indicam alta energia, enquanto as zonas roxas/escuras mostram áreas "
+        "As zonas mais quentes indicam alta energia, enquanto as zonas escuras mostram áreas "
         "onde as ondas perdem amplitude devido à distância e aos obstáculos da planta."
     )
 
@@ -306,7 +300,7 @@ elif pagina == "Simulação 3D Interativa (Casa Tradicional)":
     st.subheader("🧊 Simulação 3D Didática: Propagação de Ondas em Casa Tradicional")
     st.write(
         "Visualize em formato tridimensional interativo como o sinal de Wi-Fi se propaga e sofre atenuação "
-        "ao atravessar as divisões físicas de uma habitação tradicional. Podes rodar, ampliar e analisar o volume do sinal."
+        "ao atravessar as divisões físicas de uma habitação tradicional."
     )
 
     c_obs1, c_obs2 = st.columns(2)
@@ -403,7 +397,7 @@ elif pagina == "Consultoria Comercial & Upgrade Mesh (ISP)":
             <h3 style="color: #58a6ff; margin-top: 0;">🎯 Diagnóstico Técnico-Comercial para: {cliente_comercial}</h3>
             <p><b>Status do Assinante:</b> <span style="color: #f85149;">{viabilidade_churn}</span></p>
             <hr style="border-color: #30363d;">
-            <p><b>Plano Contratado:</b> {plano_assinado := plano_atual} Mbps | <b>Velocidade Real Entregue no Cômodo Crítico ({comodo_critico}):</b> <span style="color: #f85149; font-size: 16px;"><b>{velocidade_atual_critica} Mbps</b></span></p>
+            <p><b>Plano Contratado:</b> {plano_atual} Mbps | <b>Velocidade Real Entregue no Cômodo Crítico ({comodo_critico}):</b> <span style="color: #f85149; font-size: 16px;"><b>{velocidade_atual_critica} Mbps</b></span></p>
             <p><b>Causa Raiz (IA):</b> Atenuação severa de <b>{abs(-40 - rssi_critico):.1f} dB</b> devido a {paredes_criticas} paredes e distância de {dist_critica}m.</p>
             <hr style="border-color: #30363d;">
             <h4 style="color: #3fb950; margin-bottom: 5px;">💡 Solução Recomendada para o ISP:</h4>
@@ -414,7 +408,7 @@ elif pagina == "Consultoria Comercial & Upgrade Mesh (ISP)":
         </div>
         """, unsafe_allow_html=True)
 
-        st.success("Proposta comercial calculada e formatada com sucesso! O operador pode exportar ou apresentar diretamente ao assinante no momento do atendimento.")
+        st.success("Proposta comercial calculada e formatada com sucesso!")
 
 # =========================
 # 5. SIMULADOR TÉRMICO GERAL
@@ -475,4 +469,20 @@ elif pagina == "Suporte N1/N2 & Histórico":
             velocidade_aferida = st.number_input("Velocidade Medida no Local (Mbps)", value=120.0)
             rssi_medido = st.number_input("RSSI Real Medido (dBm)", value=-72.0)
 
-        obs = st.text_area("Parecer
+        obs = st.text_area("Parecer Técnico / Solução Aplicada")
+        salvar = st.form_submit_button("Gravar Atendimento")
+
+    if salvar:
+        registro = {
+            "Data": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Cliente": cliente,
+            "Técnico": tecnico,
+            "Cômodo Afetado": comodo_problema,
+            "Plano (Mbps)": plano_assinado,
+            "Velocidade Medida (Mbps)": velocidade_aferida,
+            "RSSI Medido": rssi_medido,
+            "Status": "Analisado via RNA",
+            "Parecer": obs
+        }
+        salvar_atendimento(registro)
+        st.s
