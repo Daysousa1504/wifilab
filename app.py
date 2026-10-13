@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 from datetime import datetime
 from pathlib import Path
 from sklearn.pipeline import make_pipeline
@@ -13,7 +14,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 # CONFIGURAÇÃO DO APLICATIVO
 # =========================
 st.set_page_config(
-    page_title="WiFiLab Pro - Planta Inteligente",
+    page_title="WiFiLab Pro - 3D Simulation Edition",
     page_icon="📶",
     layout="wide"
 )
@@ -31,11 +32,26 @@ st.markdown("""
         border-radius: 8px;
         margin-bottom: 10px;
     }
+    .commercial-card {
+        background: linear-gradient(135deg, #1b212c 0%, #10243a 100%);
+        border: 2px solid #58a6ff;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 15px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("📶 WiFiLab — Gerador de Planta Baixa & Diagnóstico de 500Mb")
-st.caption("Simulação de Cobertura Residencial Automatizada por Inteligência Artificial (RNA)")
+# =========================
+# IDENTIDADE & CRÉDITOS NA SIDEBAR
+# =========================
+st.sidebar.markdown("""
+    <div style="text-align: center; padding: 12px; background-color: #1b212c; border-radius: 8px; border: 1px solid #30363d; margin-bottom: 10px;">
+        <h2 style="color: #58a6ff; margin: 0;">📶 WiFiLab</h2>
+        <p style="font-size: 13px; color: #e6edf3; margin: 4px 0 2px 0; font-weight: bold;">Desenvolvido por Dayrlane Sousa</p>
+        <p style="font-size: 11px; color: #8b949e; margin: 0;">Plataforma ISP & Simulação 3D</p>
+    </div>
+""", unsafe_allow_html=True)
 
 # =========================
 # DADOS DE REFERÊNCIA DA RNA
@@ -87,9 +103,8 @@ def classificar_rssi(rssi):
     return "Muito Fraco (Área de Sombra)"
 
 def estimar_velocidade_500mb(rssi):
-    """Estima a taxa de entrega útil de um plano de 500Mb baseando-se no RSSI."""
     if rssi >= -50:
-        return 480  # Próximo ao limite da porta/Wi-Fi
+        return 480
     elif rssi >= -60:
         return 380
     elif rssi >= -67:
@@ -97,7 +112,7 @@ def estimar_velocidade_500mb(rssi):
     elif rssi >= -75:
         return 90
     else:
-        return 20   # Queda severa de pacote
+        return 20
 
 ARQUIVO_HISTORICO = Path("historico_wifilab.csv")
 
@@ -118,13 +133,15 @@ pagina = st.sidebar.radio(
     "MENU PRINCIPAL",
     [
         "Gerador de Planta Baixa (500Mb)",
+        "Simulação 3D Interativa (Casa Tradicional)",
+        "Consultoria Comercial & Upgrade Mesh (ISP)",
         "Simulador Térmico Geral",
         "Suporte N1/N2 & Histórico"
     ]
 )
 
 st.sidebar.divider()
-st.sidebar.caption("WiFiLab | Módulo Residencial Avançado")
+st.sidebar.caption("WiFiLab | Protótipo Académico TCC")
 
 # =========================
 # 1. GERADOR DE PLANTA BAIXA AUTOMATIZADO
@@ -133,7 +150,7 @@ if pagina == "Gerador de Planta Baixa (500Mb)":
     st.subheader("🏠 Planta Baixa Automatizada por Tipologia & Plano de 500 Mbps")
     st.write(
         "Selecione a configuração da residência e onde o roteador está instalado. "
-        "O sistema mapeará automaticamente os cômodos, calculando a atenuação do sinal e a velocidade real estimada."
+        "O sistema mapeia automaticamente os cômodos, calculando a atenuação de sinal e a taxa útil estimada."
     )
 
     with st.form("form_planta_automatica"):
@@ -155,14 +172,13 @@ if pagina == "Gerador de Planta Baixa (500Mb)":
             banda_contratada = st.number_input("Plano de Internet Contratado (Mbps)", value=500, step=50)
             frequencia_wi_fi = st.selectbox("Banda de Operação Analisada", ["5 GHz (Alta Velocidade / Menor Alcance)", "2.4 GHz (Maior Alcance / Mais Interferência)"])
 
-        gerar_planta = st.form_submit_button("Gerar Mapeamento da Planta e Análise de Desempenho")
+        gerar_planta = st.form_submit_button("Gerar Mapeamento da Planta e Análise")
 
     if gerar_planta:
         st.markdown("---")
         st.markdown(f"### 📐 Relatório Estrutural para: *{tipo_casa}*")
         st.info(f"Roteador posicionado na **{local_roteador}** | Plano de referência: **{banda_contratada} Mbps** ({frequencia_wi_fi})")
 
-        # Definindo matriz simulada de cômodos com base na tipologia escolhida
         if "2 Quartos" in tipo_casa:
             comodos = [
                 {"nome": "Sala de Estar", "distancia": 1.5 if "Sala" in local_roteador else 4.0, "paredes": 0 if "Sala" in local_roteador else 1},
@@ -180,20 +196,16 @@ if pagina == "Gerador de Planta Baixa (500Mb)":
                 {"nome": "Quarto Solteiro 1", "distancia": 6.0, "paredes": 2},
                 {"nome": "Quarto Solteiro 2", "distancia": 7.0, "paredes": 3},
             ]
-        else:  # Kitnet
+        else:
             comodos = [
                 {"nome": "Ambiente Único / Estúdio", "distancia": 2.0, "paredes": 0}
             ]
 
-        # Exibição visual em colunas/cards para cada cômodo
         cols = st.columns(2)
         for idx, comodo in enumerate(comodos):
-            # Se for 2.4GHz, adiciona leve penalidade de atenuação extra comparado a 5GHz
             fator_freq = 0.0 if "5 GHz" in frequencia_wi_fi else -4.0
             rssi_calculado = estimar_rssi(comodo["distancia"], comodo["paredes"]) + fator_freq
             velocidade_estimada = estimar_velocidade_500mb(rssi_calculado)
-            
-            # Limita ao máximo contratado
             velocidade_estimada = min(velocidade_estimada, banda_contratada)
 
             with cols[idx % 2]:
@@ -209,14 +221,143 @@ if pagina == "Gerador de Planta Baixa (500Mb)":
                 """, unsafe_allow_html=True)
 
         st.success(
-            "**Diagnóstico para o Suporte Técnico N1:** Os cômodos com mais de 2 paredes de obstáculo "
-            "apresentam queda acentuada na taxa de transferência do plano de 500Mb. "
-            "Caso o cliente relate lentidão nos fundos, a recomendação automática do sistema é o remanejamento do ponto central "
-            "ou a instalação de um nó Mesh."
+            "**Diagnóstico para o Suporte Técnico N1:** Os cômodos com mais de 2 barreiras físicas "
+            "apresentam atenuação relevante no plano de 500Mb. Recomenda-se o reposicionamento central do roteador "
+            "ou a aplicação de nós repetidores mesh para eliminar áreas de sombra."
         )
 
 # =========================
-# 2. SIMULADOR TÉRMICO GERAL
+# 2. SIMULAÇÃO 3D INTERATIVA - NOVO!
+# =========================
+elif pagina == "Simulação 3D Interativa (Casa Tradicional)":
+    st.subheader("🧊 Simulação 3D Didática: Propagação de Ondas em Casa Tradicional")
+    st.write(
+        "Visualize em formato tridimensional interativo como o sinal de Wi-Fi se propaga e sofre atenuação "
+        "ao atravessar as divisões físicas de uma habitação tradicional. Podes rodar, ampliar e analisar o volume do sinal."
+    )
+
+    # Parâmetros de controlo da simulação 3D
+    c_obs1, c_obs2 = st.columns(2)
+    with c_obs1:
+        obstaculos_3d = st.slider("Barreiras Estruturais / Paredes Interceptadas", 0, 5, 2, 1, key="slider_3d_obst")
+    with c_obs2:
+        potencia_tx = st.selectbox("Potência de Transmissão do Roteador", ["Padrão (20 dBm)", "Alta Potência (23 dBm)"])
+
+    # Geração de malha tridimensional para simulação volumétrica
+    n = 25
+    x = np.linspace(0, 10, n)
+    y = np.linspace(0, 8, n)
+    X3D, Y3D = np.meshgrid(x, y)
+    
+    # Centro da casa onde o roteador está localizado (Sala)
+    rx, ry = 3.0, 4.0
+    
+    # Cálculo de atenuação tridimensional baseada na distância radial e barreiras
+    Z3D = np.zeros_like(X3D, dtype=float)
+    for i in range(n):
+        for j in range(n):
+            dist = np.sqrt((X3D[i,j] - rx)**2 + (Y3D[i,j] - ry)**2)
+            fator_pot = 3.0 if "Alta Potência" in potencia_tx else 0.0
+            Z3D[i,j] = estimar_rssi(dist, obstaculos_3d) + fator_pot
+
+    # Construção do Gráfico 3D Interativo com Plotly
+    fig3d = go.Figure(data=[go.Surface(
+        z=Z3D,
+        x=X3D,
+        y=Y3D,
+        colorscale='RdYlGn',
+        cmin=-90,
+        cmax=-40,
+        colorbar=dict(title="RSSI (dBm)")
+    )])
+
+    # Adicionar o marcador tridimensional do Roteador
+    fig3d.add_trace(go.Scatter3d(
+        x=[rx], y=[ry], z=[-40],
+        mode='markers+text',
+        marker=dict(size=10, color='blue', symbol='diamond'),
+        text=["Roteador Principal"],
+        textposition="top center"
+    ))
+
+    fig3d.update_layout(
+        title="Modelo Volumétrico 3D de Atenuação de Sinal",
+        scene=dict(
+            xaxis_title="Largura da Residência (m)",
+            yaxis_title="Comprimento da Residência (m)",
+            zaxis_title="Potência do Sinal (dBm)",
+            xaxis=dict(backgroundcolor="#1b212c", color="white"),
+            yaxis=dict(backgroundcolor="#1b212c", color="white"),
+            zaxis=dict(backgroundcolor="#1b212c", color="white"),
+        ),
+        paper_bgcolor="#0e1117",
+        font=dict(color="white"),
+        margin=dict(l=0, r=0, b=0, t=40),
+        height=550
+    )
+
+    st.plotly_chart(fig3d, use_container_width=True)
+
+    st.info(
+        "💡 **Didática da Simulação 3D:** Conforme a onda rádio se afasta do centro (diamante azul) "
+        "e colide com as barreiras estruturais, o relevo tridimensional desce para cores quentes/frias (amarelo, laranja e vermelho), "
+        "ilustrando claramente a perda física de potência e o motivo pelo qual cômodos distantes perdem velocidade útil."
+    )
+
+# =========================
+# 3. CONSULTORIA COMERCIAL & UPGRADE MESH (ISP)
+# =========================
+elif pagina == "Consultoria Comercial & Upgrade Mesh (ISP)":
+    st.subheader("💼 Módulo Comercial ISP: Monetização de Rede & Upsell Mesh")
+    st.write(
+        "Ferramenta de inteligência de negócios para provedores de internet. "
+        "Com base na reclamação de lentidão do cliente, o sistema calcula a necessidade estrutural de nós Mesh "
+        "e gera uma **Proposta Comercial automatizada** para aumentar o ticket médio e eliminar o cancelamento (Churn)."
+    )
+
+    with st.form("form_comercial"):
+        c1, c2 = st.columns(2)
+        with c1:
+            cliente_comercial = st.text_input("Nome do Assinante", value="Cliente Residencial")
+            plano_atual = st.selectbox("Plano Contratado", [200, 300, 500, 700, 1000], index=2)
+            comodo_critico = st.selectbox("Cômodo com Relato de Sombra/Lentidão", ["Quarto dos Fundos", "Área Gourmet / Edícula", "Escritório Superior", "Cozinha"])
+        with c2:
+            dist_critica = st.slider("Distância estimada do cômodo crítico (m)", 4.0, 25.0, 9.0, 0.5)
+            paredes_criticas = st.slider("Paredes de alvenaria no trajeto", 2, 6, 3, 1)
+            valor_mensalidade_mesh = st.number_input("Valor da Mensalidade do Nó Mesh Extra (R$)", value=19.90, step=5.0)
+
+        gerar_proposta = st.form_submit_button("Gerar Proposta Comercial & Análise de Viabilidade Mesh")
+
+    if gerar_proposta:
+        rssi_critico = estimar_rssi(dist_critica, paredes_criticas)
+        velocidade_atual_critica = estimar_velocidade_500mb(rssi_critico)
+        
+        nos_recomendados = 1 if paredes_criticas <= 3 else 2
+        viabilidade_churn = "ALTO RISCO DE CANCELAMENTO (Cliente insatisfeito com Wi-Fi nos fundos)" if rssi_critico < -70 else "Moderado"
+
+        st.markdown("---")
+        st.markdown("### 📊 Relatório de Viabilidade e Proposta para o Provedor")
+
+        st.markdown(f"""
+        <div class="commercial-card">
+            <h3 style="color: #58a6ff; margin-top: 0;">🎯 Diagnóstico Técnico-Comercial para: {cliente_comercial}</h3>
+            <p><b>Status do Assinante:</b> <span style="color: #f85149;">{viabilidade_churn}</span></p>
+            <hr style="border-color: #30363d;">
+            <p><b>Plano Contratado:</b> {plano_assinado := plano_atual} Mbps | <b>Velocidade Real Entregue no Cômodo Crítico ({comodo_critico}):</b> <span style="color: #f85149; font-size: 16px;"><b>{velocidade_atual_critica} Mbps</b></span></p>
+            <p><b>Causa Raiz (IA):</b> Atenuação severa de <b>{abs(-40 - rssi_critico):.1f} dB</b> devido a {paredes_criticas} paredes e distância de {dist_critica}m.</p>
+            <hr style="border-color: #30363d;">
+            <h4 style="color: #3fb950; margin-bottom: 5px;">💡 Solução Recomendada para o ISP:</h4>
+            <p>Instalação de <b>{nos_recomendados} Roteador(es) Wi-Fi Mesh adicional(is)</b> para entrega integral dos {plano_atual} Mbps contratados em 100% da residência.</p>
+            <h4 style="color: #58a6ff; margin-bottom: 5px; margin-top: 15px;">💰 Proposta de Upsell Gerada Automaticamente:</h4>
+            <p style="font-size: 18px; color: #ffffff;"><b>Adicional de R$ {valor_mensalidade_mesh:.2f} / mês</b> no plano do cliente (Serviço de Cobertura Total Garantida).</p>
+            <p style="font-size: 12px; color: #8b949e; margin-bottom: 0;">Retorno financeiro estimado para o provedor: Zero Churn + Fidelização de Longo Prazo.</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.success("Proposta comercial calculada e formatada com sucesso! O operador pode exportar ou apresentar diretamente ao assinante no momento do atendimento.")
+
+# =========================
+# 4. SIMULADOR TÉRMICO GERAL
 # =========================
 elif pagina == "Simulador Térmico Geral":
     st.subheader("🗺️ Mapa Térmico Espacial de Cobertura")
@@ -258,7 +399,7 @@ elif pagina == "Simulador Térmico Geral":
     plt.close(fig)
 
 # =========================
-# 3. SUPORTE N1/N2 & HISTÓRICO
+# 5. SUPORTE N1/N2 & HISTÓRICO
 # =========================
 elif pagina == "Suporte N1/N2 & Histórico":
     st.subheader("🛠️ Registo de Ordens de Serviço & Histórico Técnico")
@@ -290,7 +431,7 @@ elif pagina == "Suporte N1/N2 & Histórico":
             "Parecer": obs
         }
         salvar_atendimento(registro)
-        st.success("Atendimento gravado com sucesso no banco de dados do sistema!")
+        st.success("Atendimento gravado com sucesso no registo do sistema!")
 
     st.divider()
     st.markdown("### 📋 Histórico Consolidado de Atendimentos")
@@ -303,4 +444,5 @@ elif pagina == "Suporte N1/N2 & Histórico":
         st.download_button("Baixar Relatório CSV", data=csv, file_name="wifilab_historico_atendimentos.csv", mime="text/csv")
 
 st.divider()
-st.caption("WiFiLab Pro — Desenvolvido para TCC de Engenharia / Redes.")
+st.markdown("<p style='text-align: center; color: #8b949e; font-size: 13px;'>WiFiLab Pro — Criado e Desenvolvido por <b>Dayrlane Sousa</b> | TCC Engenharia de Redes</p>", unsafe_allow_html=True)
+    
