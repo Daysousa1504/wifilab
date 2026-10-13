@@ -145,22 +145,22 @@ st.sidebar.divider()
 st.sidebar.caption("WiFiLab | Protótipo Académico TCC")
 
 # =========================
-# 1. PROPAGAÇÃO DE ONDAS EM TEMPO REAL
+# 1. PROPAGAÇÃO DE ONDAS EM TEMPO REAL SOBRE PLANTA
 # =========================
 if pagina == "Propagação de Ondas em Tempo Real (Planta)":
-    st.subheader("🌊 Simulação Dinâmica de Ondas Wi-Fi sobre Planta Residencial")
+    st.subheader("🌊 Simulação Dinâmica de Ondas Wi-Fi sobre Planta Residencial Real")
     st.write(
-        "Selecione a posição do roteador na residência. O simulador calcula em tempo real "
-        "a irradiação de frentes de onda eletromagnética, demonstrando o padrão de atenuação através das divisórias da casa."
+        "Arraste os cursores para posicionar o roteador na planta da casa. "
+        "As frentes de onda eletromagnética propagam-se através das paredes divisórias (Sala, Quartos, Cozinha e Banheiro)."
     )
 
     c_pos1, c_pos2 = st.columns(2)
     with c_pos1:
-        pos_roteador_x = st.slider("Posição X do Roteador na Planta", 1.0, 9.0, 8.0, 0.5)
+        pos_roteador_x = st.slider("Posição X do Roteador (Largura)", 0.5, 9.5, 5.0, 0.5)
     with c_pos2:
-        pos_roteador_y = st.slider("Posição Y do Roteador na Planta", 1.0, 7.0, 1.5, 0.5)
+        pos_roteador_y = st.slider("Posição Y do Roteador (Comprimento)", 0.5, 7.5, 6.5, 0.5)
 
-    res = 60
+    res = 70
     x_vals = np.linspace(0, 10, res)
     y_vals = np.linspace(0, 8, res)
     X_grid, Y_grid = np.meshgrid(x_vals, y_vals)
@@ -168,20 +168,50 @@ if pagina == "Propagação de Ondas em Tempo Real (Planta)":
     Z_wave = np.zeros_like(X_grid)
     for i in range(res):
         for j in range(res):
-            dist = np.sqrt((X_grid[i, j] - pos_roteador_x)**2 + (Y_grid[i, j] - pos_roteador_y)**2)
-            onda_senoidal = np.sin(dist * 6.0) * 4.0 
-            rssi_base = estimar_rssi(dist, obstaculos=2 if dist > 3.5 else 0)
+            x_p, y_p = X_grid[i, j], Y_grid[i, j]
+            dist = np.sqrt((x_p - pos_roteador_x)**2 + (y_p - pos_roteador_y)**2)
+            
+            # Simulação física de barreiras estruturais da planta (Paredes divisórias)
+            paredes_travessia = 0
+            # Parede horizontal central (Y = 4.0)
+            if (4.0 <= y_p <= 4.3) and not (3.5 <= x_p <= 6.5): 
+                paredes_travessia += 1
+            # Parede vertical divisória de quartos (X = 5.0, Y > 4.0)
+            if (4.8 <= x_p <= 5.2) and (y_p >= 4.0):
+                paredes_travessia += 1
+
+            onda_senoidal = np.sin(dist * 7.0) * 3.5 
+            rssi_base = estimar_rssi(dist, obstaculos=paredes_travessia + (2 if dist > 4 else 0))
             Z_wave[i, j] = rssi_base + onda_senoidal
 
+    # Gráfico de Contorno (Ondas)
     fig_wave = go.Figure(data=go.Contour(
         z=Z_wave,
         x=x_vals,
         y=y_vals,
         colorscale='Viridis',
-        ncontours=30,
-        colorbar=dict(title="Intensidade (dBm)")
+        ncontours=35,
+        colorbar=dict(title="RSSI (dBm)")
     ))
 
+    # Desenho das Paredes Estruturais da Planta Baixa (Linhas Brancas)
+    # Contorno Externo da Casa
+    fig_wave.add_shape(type="rect", x0=0, y0=0, x1=10, y1=8, line=dict(color="white", width=3))
+    # Parede Horizontal Central (Corredor / Divisão Social x Íntima)
+    fig_wave.add_shape(type="line", x0=0, y0=4, x1=3.5, y1=4, line=dict(color="white", width=2))
+    fig_wave.add_shape(type="line", x0=6.5, y0=4, x1=10, y1=4, line=dict(color="white", width=2))
+    # Parede Vertical (Divisão entre Quartos)
+    fig_wave.add_shape(type="line", x0=5, y0=4, x1=5, y1=8, line=dict(color="white", width=2))
+    # Parede da Cozinha / Banheiro
+    fig_wave.add_shape(type="line", x0=3.5, y0=0, x1=3.5, y1=2.5, line=dict(color="white", width=2))
+
+    # Rótulos dos Cômodos na Planta
+    fig_wave.add_annotation(x=2.0, y=6.0, text="<b>Sala de Estar</b>", showarrow=False, font=dict(color="white", size=11))
+    fig_wave.add_annotation(x=7.5, y=6.0, text="<b>Cozinha / Área</b>", showarrow=False, font=dict(color="white", size=11))
+    fig_wave.add_annotation(x=2.5, y=2.0, text="<b>Quarto 1</b>", showarrow=False, font=dict(color="white", size=11))
+    fig_wave.add_annotation(x=7.5, y=2.0, text="<b>Quarto 2 (Suíte)</b>", showarrow=False, font=dict(color="white", size=11))
+
+    # Ponto do Roteador Wi-Fi
     fig_wave.add_trace(go.Scatter(
         x=[pos_roteador_x],
         y=[pos_roteador_y],
@@ -192,22 +222,22 @@ if pagina == "Propagação de Ondas em Tempo Real (Planta)":
     ))
 
     fig_wave.update_layout(
-        title="Frentes de Onda Eletromagnética em Tempo Real",
+        title="Planta Baixa Residencial & Propagação de Ondas em Tempo Real",
         xaxis_title="Largura (m)",
         yaxis_title="Comprimento (m)",
         paper_bgcolor="#0e1117",
         plot_bgcolor="#1b212c",
         font=dict(color="white"),
-        height=500,
+        height=550,
         margin=dict(l=20, r=20, t=40, b=20)
     )
 
     st.plotly_chart(fig_wave, use_container_width=True)
 
     st.success(
-        "📡 **Análise Didática:** As linhas concêntricas refletem as frentes de onda emitidas pelo equipamento. "
-        "As zonas mais quentes indicam alta energia, enquanto as zonas escuras mostram áreas "
-        "onde as ondas perdem amplitude devido à distância e aos obstáculos da planta."
+        "🏠 **Simulação Realista:** As linhas brancas delimitam os cômodos da residência (Salas, Quartos e Cozinha). "
+        "À medida que alteras a posição do roteador (estrela vermelha), as frentes de onda sofrem atenuação e desvio "
+        "ao colidirem com as paredes estruturais, ilustrando perfeitamente o comportamento físico real de propagação em campo."
     )
 
 # =========================
@@ -439,50 +469,4 @@ elif pagina == "Simulador Térmico Geral":
     ax.set_facecolor('#1b212c')
     
     mapa = ax.imshow(Z, origin="lower", extent=[0, largura, 0, comprimento], aspect="auto", cmap="RdYlGn", vmin=-90, vmax=-40)
-    ax.scatter([largura/2], [comprimento/2], marker="*", s=250, color="#58a6ff", label="Roteador Central")
-    ax.set_xlabel("Largura (m)", color="white")
-    ax.set_ylabel("Comprimento (m)", color="white")
-    ax.tick_params(colors="white")
-    ax.set_title("Propagação de Sinal na Residência", color="white")
-    
-    cbar = fig.colorbar(mapa, ax=ax)
-    cbar.set_label("RSSI (dBm)", color="white")
-    cbar.ax.yaxis.set_tick_params(color="white")
-
-    st.pyplot(fig)
-    plt.close(fig)
-
-# =========================
-# 6. SUPORTE N1/N2 & HISTÓRICO
-# =========================
-elif pagina == "Suporte N1/N2 & Histórico":
-    st.subheader("🛠️ Registo de Ordens de Serviço & Histórico Técnico")
-
-    with st.form("form_os"):
-        c1, c2 = st.columns(2)
-        with c1:
-            cliente = st.text_input("Nome do Cliente / OS", value="OS-8821")
-            tecnico = st.text_input("Técnico Responsável", value="Suporte N1")
-            comodo_problema = st.selectbox("Cômodo com Relato de Lentidão", ["Quarto 1", "Quarto 2", "Cozinha", "Área Externa"])
-        with c2:
-            plano_assinado = st.number_input("Plano (Mbps)", value=500)
-            velocidade_aferida = st.number_input("Velocidade Medida no Local (Mbps)", value=120.0)
-            rssi_medido = st.number_input("RSSI Real Medido (dBm)", value=-72.0)
-
-        obs = st.text_area("Parecer Técnico / Solução Aplicada")
-        salvar = st.form_submit_button("Gravar Atendimento")
-
-    if salvar:
-        registro = {
-            "Data": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Cliente": cliente,
-            "Técnico": tecnico,
-            "Cômodo Afetado": comodo_problema,
-            "Plano (Mbps)": plano_assinado,
-            "Velocidade Medida (Mbps)": velocidade_aferida,
-            "RSSI Medido": rssi_medido,
-            "Status": "Analisado via RNA",
-            "Parecer": obs
-        }
-        salvar_atendimento(registro)
-        st.s
+    ax.scatter([largur
