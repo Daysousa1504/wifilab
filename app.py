@@ -1,3 +1,4 @@
+
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -14,7 +15,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 # CONFIGURAÇÃO DO APLICATIVO
 # =========================
 st.set_page_config(
-    page_title="WiFiLab Pro - 3D Simulation Edition",
+    page_title="WiFiLab Pro - Wave Propagation Edition",
     page_icon="📶",
     layout="wide"
 )
@@ -49,7 +50,7 @@ st.sidebar.markdown("""
     <div style="text-align: center; padding: 12px; background-color: #1b212c; border-radius: 8px; border: 1px solid #30363d; margin-bottom: 10px;">
         <h2 style="color: #58a6ff; margin: 0;">📶 WiFiLab</h2>
         <p style="font-size: 13px; color: #e6edf3; margin: 4px 0 2px 0; font-weight: bold;">Desenvolvido por Dayrlane Sousa</p>
-        <p style="font-size: 11px; color: #8b949e; margin: 0;">Plataforma ISP & Simulação 3D</p>
+        <p style="font-size: 11px; color: #8b949e; margin: 0;">Simulador de Ondas & ISP Pro</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -132,6 +133,7 @@ def salvar_atendimento(registro):
 pagina = st.sidebar.radio(
     "MENU PRINCIPAL",
     [
+        "Propagação de Ondas em Tempo Real (Planta)",
         "Gerador de Planta Baixa (500Mb)",
         "Simulação 3D Interativa (Casa Tradicional)",
         "Consultoria Comercial & Upgrade Mesh (ISP)",
@@ -144,9 +146,80 @@ st.sidebar.divider()
 st.sidebar.caption("WiFiLab | Protótipo Académico TCC")
 
 # =========================
-# 1. GERADOR DE PLANTA BAIXA AUTOMATIZADO
+# 1. PROPAGAÇÃO DE ONDAS EM TEMPO REAL (NOVO!)
 # =========================
-if pagina == "Gerador de Planta Baixa (500Mb)":
+if pagina == "Propagação de Ondas em Tempo Real (Planta)":
+    st.subheader("🌊 Simulação Dinâmica de Ondas Wi-Fi sobre Planta Residencial")
+    st.write(
+        "Selecione a posição do roteador na residência. O simulador calcula em tempo real "
+        "a irradiação de frentes de onda eletromagnética, demonstrando o padrão de atenuação através das divisórias da casa."
+    )
+
+    c_pos1, c_pos2 = st.columns(2)
+    with c_pos1:
+        pos_roteador_x = st.slider("Posição X do Roteador na Planta", 1.0, 9.0, 8.0, 0.5)
+    with c_pos2:
+        pos_roteador_y = st.slider("Posição Y do Roteador na Planta", 1.0, 7.0, 1.5, 0.5)
+
+    # Geração de grade espacial representando a planta residencial do vídeo
+    res = 60
+    x_vals = np.linspace(0, 10, res)
+    y_vals = np.linspace(0, 8, res)
+    X_grid, Y_grid = np.meshgrid(x_vals, y_vals)
+
+    # Simulação física de frentes de onda concêntricas combinadas com atenuação de barreiras (RNA)
+    Z_wave = np.zeros_like(X_grid)
+    for i in range(res):
+        for j in range(res):
+            dist = np.sqrt((X_grid[i, j] - pos_roteador_x)**2 + (Y_grid[i, j] - pos_roteador_y)**2)
+            # Simulação do efeito de interferência construtiva/destrutiva de ondas (frequencia visível)
+            onda_senoidal = np.sin(dist * 6.0) * 4.0 
+            rssi_base = estimar_rssi(dist, obstaculos=2 if dist > 3.5 else 0)
+            Z_wave[i, j] = rssi_base + onda_senoidal
+
+    # Gráfico Contour/Heatmap interativo imitando o comportamento do vídeo
+    fig_wave = go.Figure(data=go.Contour(
+        z=Z_wave,
+        x=x_vals,
+        y=y_vals,
+        colorscale='Viridis',
+        ncontours=30,
+        colorbar=dict(title="Intensidade (dBm)")
+    ))
+
+    # Ponto do Roteador
+    fig_wave.add_trace(go.Scatter(
+        x=[pos_roteador_x],
+        y=[pos_roteador_y],
+        mode='markers+text',
+        marker=dict(size=16, color='red', symbol='star'),
+        text=["Roteador Wi-Fi"],
+        textposition="top center"
+    ))
+
+    fig_wave.update_layout(
+        title="Frentes de Onda Eletromagnética em Tempo Real",
+        xaxis_title="Largura (m)",
+        yaxis_title="Comprimento (m)",
+        paper_bgcolor="#0e1117",
+        plot_bgcolor="#1b212c",
+        font=dict(color="white"),
+        height=500,
+        margin=dict(l=20, r=20, t=40, b=20)
+    )
+
+    st.plotly_chart(fig_wave, use_container_width=True)
+
+    st.success(
+        "📡 **Análise Didática:** As linhas concêntricas refletem as frentes de onda emitidas pelo equipamento. "
+        "As zonas mais quentes (amarelo/verde brilhante) indicam alta energia, enquanto as zonas roxas/escuras mostram áreas "
+        "onde as ondas perdem amplitude devido à distância e aos obstáculos da planta."
+    )
+
+# =========================
+# 2. GERADOR DE PLANTA BAIXA AUTOMATIZADO
+# =========================
+elif pagina == "Gerador de Planta Baixa (500Mb)":
     st.subheader("🏠 Planta Baixa Automatizada por Tipologia & Plano de 500 Mbps")
     st.write(
         "Selecione a configuração da residência e onde o roteador está instalado. "
@@ -227,7 +300,7 @@ if pagina == "Gerador de Planta Baixa (500Mb)":
         )
 
 # =========================
-# 2. SIMULAÇÃO 3D INTERATIVA - NOVO!
+# 3. SIMULAÇÃO 3D INTERATIVA
 # =========================
 elif pagina == "Simulação 3D Interativa (Casa Tradicional)":
     st.subheader("🧊 Simulação 3D Didática: Propagação de Ondas em Casa Tradicional")
@@ -236,23 +309,18 @@ elif pagina == "Simulação 3D Interativa (Casa Tradicional)":
         "ao atravessar as divisões físicas de uma habitação tradicional. Podes rodar, ampliar e analisar o volume do sinal."
     )
 
-    # Parâmetros de controlo da simulação 3D
     c_obs1, c_obs2 = st.columns(2)
     with c_obs1:
         obstaculos_3d = st.slider("Barreiras Estruturais / Paredes Interceptadas", 0, 5, 2, 1, key="slider_3d_obst")
     with c_obs2:
         potencia_tx = st.selectbox("Potência de Transmissão do Roteador", ["Padrão (20 dBm)", "Alta Potência (23 dBm)"])
 
-    # Geração de malha tridimensional para simulação volumétrica
     n = 25
     x = np.linspace(0, 10, n)
     y = np.linspace(0, 8, n)
     X3D, Y3D = np.meshgrid(x, y)
-    
-    # Centro da casa onde o roteador está localizado (Sala)
     rx, ry = 3.0, 4.0
     
-    # Cálculo de atenuação tridimensional baseada na distância radial e barreiras
     Z3D = np.zeros_like(X3D, dtype=float)
     for i in range(n):
         for j in range(n):
@@ -260,7 +328,6 @@ elif pagina == "Simulação 3D Interativa (Casa Tradicional)":
             fator_pot = 3.0 if "Alta Potência" in potencia_tx else 0.0
             Z3D[i,j] = estimar_rssi(dist, obstaculos_3d) + fator_pot
 
-    # Construção do Gráfico 3D Interativo com Plotly
     fig3d = go.Figure(data=[go.Surface(
         z=Z3D,
         x=X3D,
@@ -271,7 +338,6 @@ elif pagina == "Simulação 3D Interativa (Casa Tradicional)":
         colorbar=dict(title="RSSI (dBm)")
     )])
 
-    # Adicionar o marcador tridimensional do Roteador
     fig3d.add_trace(go.Scatter3d(
         x=[rx], y=[ry], z=[-40],
         mode='markers+text',
@@ -298,14 +364,8 @@ elif pagina == "Simulação 3D Interativa (Casa Tradicional)":
 
     st.plotly_chart(fig3d, use_container_width=True)
 
-    st.info(
-        "💡 **Didática da Simulação 3D:** Conforme a onda rádio se afasta do centro (diamante azul) "
-        "e colide com as barreiras estruturais, o relevo tridimensional desce para cores quentes/frias (amarelo, laranja e vermelho), "
-        "ilustrando claramente a perda física de potência e o motivo pelo qual cômodos distantes perdem velocidade útil."
-    )
-
 # =========================
-# 3. CONSULTORIA COMERCIAL & UPGRADE MESH (ISP)
+# 4. CONSULTORIA COMERCIAL & UPGRADE MESH (ISP)
 # =========================
 elif pagina == "Consultoria Comercial & Upgrade Mesh (ISP)":
     st.subheader("💼 Módulo Comercial ISP: Monetização de Rede & Upsell Mesh")
@@ -357,7 +417,7 @@ elif pagina == "Consultoria Comercial & Upgrade Mesh (ISP)":
         st.success("Proposta comercial calculada e formatada com sucesso! O operador pode exportar ou apresentar diretamente ao assinante no momento do atendimento.")
 
 # =========================
-# 4. SIMULADOR TÉRMICO GERAL
+# 5. SIMULADOR TÉRMICO GERAL
 # =========================
 elif pagina == "Simulador Térmico Geral":
     st.subheader("🗺️ Mapa Térmico Espacial de Cobertura")
@@ -399,7 +459,7 @@ elif pagina == "Simulador Térmico Geral":
     plt.close(fig)
 
 # =========================
-# 5. SUPORTE N1/N2 & HISTÓRICO
+# 6. SUPORTE N1/N2 & HISTÓRICO
 # =========================
 elif pagina == "Suporte N1/N2 & Histórico":
     st.subheader("🛠️ Registo de Ordens de Serviço & Histórico Técnico")
@@ -415,34 +475,4 @@ elif pagina == "Suporte N1/N2 & Histórico":
             velocidade_aferida = st.number_input("Velocidade Medida no Local (Mbps)", value=120.0)
             rssi_medido = st.number_input("RSSI Real Medido (dBm)", value=-72.0)
 
-        obs = st.text_area("Parecer Técnico / Solução Aplicada")
-        salvar = st.form_submit_button("Gravar Atendimento")
-
-    if salvar:
-        registro = {
-            "Data": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Cliente": cliente,
-            "Técnico": tecnico,
-            "Cômodo Afetado": comodo_problema,
-            "Plano (Mbps)": plano_assinado,
-            "Velocidade Medida (Mbps)": velocidade_aferida,
-            "RSSI Medido": rssi_medido,
-            "Status": "Analisado via RNA",
-            "Parecer": obs
-        }
-        salvar_atendimento(registro)
-        st.success("Atendimento gravado com sucesso no registo do sistema!")
-
-    st.divider()
-    st.markdown("### 📋 Histórico Consolidado de Atendimentos")
-    historico = carregar_historico()
-    if historico.empty:
-        st.info("Nenhum atendimento registado até o momento.")
-    else:
-        st.dataframe(historico, use_container_width=True)
-        csv = historico.to_csv(index=False).encode("utf-8-sig")
-        st.download_button("Baixar Relatório CSV", data=csv, file_name="wifilab_historico_atendimentos.csv", mime="text/csv")
-
-st.divider()
-st.markdown("<p style='text-align: center; color: #8b949e; font-size: 13px;'>WiFiLab Pro — Criado e Desenvolvido por <b>Dayrlane Sousa</b> | TCC Engenharia de Redes</p>", unsafe_allow_html=True)
-    
+        obs = st.text_area("Parecer
