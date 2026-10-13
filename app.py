@@ -13,21 +13,29 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 # CONFIGURAÇÃO DO APLICATIVO
 # =========================
 st.set_page_config(
-    page_title="WiFiLab",
+    page_title="WiFiLab Pro - Planta Inteligente",
     page_icon="📶",
     layout="wide"
 )
 
 st.markdown("""
 <style>
-    .block-container {padding-top: 1.5rem;}
-    [data-testid="stSidebar"] {background-color: #10243a;}
-    [data-testid="stSidebar"] * {color: white;}
+    .stApp { background-color: #0e1117; color: #ffffff; }
+    .block-container { padding-top: 1.5rem; }
+    [data-testid="stSidebar"] { background-color: #161b22; }
+    [data-testid="stSidebar"] * { color: #ffffff; }
+    .room-card {
+        background-color: #1b212c;
+        border: 1px solid #30363d;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("📶 WiFiLab - Gestão e Diagnóstico de Wi-Fi")
-st.caption("Sistema Inteligente de Cobertura Residencial e Suporte Técnico N1/N2")
+st.title("📶 WiFiLab — Gerador de Planta Baixa & Diagnóstico de 500Mb")
+st.caption("Simulação de Cobertura Residencial Automatizada por Inteligência Artificial (RNA)")
 
 # =========================
 # DADOS DE REFERÊNCIA DA RNA
@@ -60,32 +68,37 @@ def treinar_rna():
     return modelo
 
 rna = treinar_rna()
-
 y_pred_ref = rna.predict(X_REF)
-mse_modelo = mean_squared_error(Y_REF, y_pred_ref)
 mae_modelo = mean_absolute_error(Y_REF, y_pred_ref)
 
 def estimar_rssi(distancia, obstaculos):
-    entrada = np.array([[
-        max(float(distancia), 0.1),
-        max(int(obstaculos), 0)
-    ]])
+    entrada = np.array([[max(float(distancia), 0.1), max(int(obstaculos), 0)]])
     return float(rna.predict(entrada)[0])
 
 def classificar_rssi(rssi):
     if rssi >= -50:
-        return "Excelente (Muito bom)"
+        return "Excelente (Ideal para 4K/Jogos)"
     elif rssi >= -60:
-        return "Bom (Estável para streaming)"
+        return "Bom (Estável)"
     elif rssi >= -67:
-        return "Razoável (Navegação básica)"
+        return "Razoável (Navegação Padrão)"
     elif rssi >= -75:
-        return "Fraco (Possíveis quedas)"
-    return "Muito fraco (Sem conexão útil)"
+        return "Fraco (Possíveis Lentidões)"
+    return "Muito Fraco (Área de Sombra)"
 
-# =========================
-# HISTÓRICO PERSISTENTE LOCAL
-# =========================
+def estimar_velocidade_500mb(rssi):
+    """Estima a taxa de entrega útil de um plano de 500Mb baseando-se no RSSI."""
+    if rssi >= -50:
+        return 480  # Próximo ao limite da porta/Wi-Fi
+    elif rssi >= -60:
+        return 380
+    elif rssi >= -67:
+        return 220
+    elif rssi >= -75:
+        return 90
+    else:
+        return 20   # Queda severa de pacote
+
 ARQUIVO_HISTORICO = Path("historico_wifilab.csv")
 
 def carregar_historico():
@@ -95,237 +108,199 @@ def carregar_historico():
 
 def salvar_atendimento(registro):
     historico = carregar_historico()
-    historico = pd.concat(
-        [historico, pd.DataFrame([registro])],
-        ignore_index=True
-    )
-    historico.to_csv(
-        ARQUIVO_HISTORICO,
-        index=False,
-        encoding="utf-8-sig"
-    )
+    historico = pd.concat([historico, pd.DataFrame([registro])], ignore_index=True)
+    historico.to_csv(ARQUIVO_HISTORICO, index=False, encoding="utf-8-sig")
 
 # =========================
-# MENU
+# MENU LATERAL
 # =========================
 pagina = st.sidebar.radio(
     "MENU PRINCIPAL",
     [
-        "Painel inicial",
-        "Cobertura residencial",
-        "Planta Baixa & Dispositivos (N1)",
-        "Suporte N1/N2",
-        "Histórico"
+        "Gerador de Planta Baixa (500Mb)",
+        "Simulador Térmico Geral",
+        "Suporte N1/N2 & Histórico"
     ]
 )
 
 st.sidebar.divider()
-st.sidebar.caption("WiFiLab | Protótipo TCC")
+st.sidebar.caption("WiFiLab | Módulo Residencial Avançado")
 
 # =========================
-# PAINEL INICIAL
+# 1. GERADOR DE PLANTA BAIXA AUTOMATIZADO
 # =========================
-if pagina == "Painel inicial":
-    st.subheader("Painel inicial")
-    historico = carregar_historico()
-
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Atendimentos", len(historico))
-    c2.metric("MSE do Modelo", f"{mse_modelo:.2f} dB²")
-    c3.metric("MAE do Modelo", f"{mae_modelo:.2f} dB")
-    c4.metric("Versão", "2.0 TCC")
-
-    st.markdown("### Diferencial Competitivo frente ao Mercado")
+if pagina == "Gerador de Planta Baixa (500Mb)":
+    st.subheader("🏠 Planta Baixa Automatizada por Tipologia & Plano de 500 Mbps")
     st.write(
-        "Este aplicativo vai além de simples medidores de sinal (como o WiFiman). "
-        "Ele cruza **Inteligência Artificial (RNA)** com uma **planta baixa interativa e mapeamento de dispositivos por cômodo**, "
-        "permitindo que o suporte N1 identifique exatamente onde há perda excessiva de sinal e qual dispositivo está sofrendo interferência."
+        "Selecione a configuração da residência e onde o roteador está instalado. "
+        "O sistema mapeará automaticamente os cômodos, calculando a atenuação do sinal e a velocidade real estimada."
     )
 
-    st.info(
-        f"A RNA integrada possui erro absoluto médio de calibração de **{mae_modelo:.2f} dB**, "
-        "garantindo estimativas consistentes para o dimensionamento residencial."
-    )
+    with st.form("form_planta_automatica"):
+        c1, c2 = st.columns(2)
+        with c1:
+            tipo_casa = st.selectbox(
+                "Tipologia da Residência",
+                [
+                    "2 Quartos, 1 Banheiro, Sala Conjugada",
+                    "3 Quartos (1 Suíte), 2 Banheiros, Sala e Cozinha",
+                    "Kitnet / Studio (Cômodo Único)"
+                ]
+            )
+            local_roteador = st.selectbox(
+                "Localização do Roteador Wi-Fi",
+                ["Sala de Estar (perto da TV)", "Corredor Central", "Cozinha", "Quarto Principal"]
+            )
+        with c2:
+            banda_contratada = st.number_input("Plano de Internet Contratado (Mbps)", value=500, step=50)
+            frequencia_wi_fi = st.selectbox("Banda de Operação Analisada", ["5 GHz (Alta Velocidade / Menor Alcance)", "2.4 GHz (Maior Alcance / Mais Interferência)"])
+
+        gerar_planta = st.form_submit_button("Gerar Mapeamento da Planta e Análise de Desempenho")
+
+    if gerar_planta:
+        st.markdown("---")
+        st.markdown(f"### 📐 Relatório Estrutural para: *{tipo_casa}*")
+        st.info(f"Roteador posicionado na **{local_roteador}** | Plano de referência: **{banda_contratada} Mbps** ({frequencia_wi_fi})")
+
+        # Definindo matriz simulada de cômodos com base na tipologia escolhida
+        if "2 Quartos" in tipo_casa:
+            comodos = [
+                {"nome": "Sala de Estar", "distancia": 1.5 if "Sala" in local_roteador else 4.0, "paredes": 0 if "Sala" in local_roteador else 1},
+                {"nome": "Cozinha", "distancia": 3.0 if "Cozinha" in local_roteador else 5.0, "paredes": 0 if "Cozinha" in local_roteador else 1},
+                {"nome": "Banheiro", "distancia": 4.5, "paredes": 2},
+                {"nome": "Quarto 1 (Frente)", "distancia": 5.5, "paredes": 2},
+                {"nome": "Quarto 2 (Fundos)", "distancia": 7.5, "paredes": 3},
+            ]
+        elif "3 Quartos" in tipo_casa:
+            comodos = [
+                {"nome": "Sala de Estar", "distancia": 1.5 if "Sala" in local_roteador else 6.0, "paredes": 0 if "Sala" in local_roteador else 2},
+                {"nome": "Cozinha", "distancia": 4.0 if "Cozinha" in local_roteador else 5.0, "paredes": 1},
+                {"nome": "Banheiro Social", "distancia": 5.0, "paredes": 2},
+                {"nome": "Suíte + Banheiro", "distancia": 8.0, "paredes": 3},
+                {"nome": "Quarto Solteiro 1", "distancia": 6.0, "paredes": 2},
+                {"nome": "Quarto Solteiro 2", "distancia": 7.0, "paredes": 3},
+            ]
+        else:  # Kitnet
+            comodos = [
+                {"nome": "Ambiente Único / Estúdio", "distancia": 2.0, "paredes": 0}
+            ]
+
+        # Exibição visual em colunas/cards para cada cômodo
+        cols = st.columns(2)
+        for idx, comodo in enumerate(comodos):
+            # Se for 2.4GHz, adiciona leve penalidade de atenuação extra comparado a 5GHz
+            fator_freq = 0.0 if "5 GHz" in frequencia_wi_fi else -4.0
+            rssi_calculado = estimar_rssi(comodo["distancia"], comodo["paredes"]) + fator_freq
+            velocidade_estimada = estimar_velocidade_500mb(rssi_calculado)
+            
+            # Limita ao máximo contratado
+            velocidade_estimada = min(velocidade_estimada, banda_contratada)
+
+            with cols[idx % 2]:
+                st.markdown(f"""
+                <div class="room-card">
+                    <h4>📍 {comodo['nome']}</h4>
+                    <b>Distância ao Roteador:</b> {comodo['distancia']} m<br>
+                    <b>Paredes no Caminho:</b> {comodo['paredes']}<br>
+                    <b>Sinal Estimado (RSSI):</b> {rssi_calculado:.1f} dBm<br>
+                    <b>Qualidade:</b> {classificar_rssi(rssi_calculado)}<br>
+                    <b>Velocidade Útil Estimada:</b> <span style="color: #3fb950; font-size: 18px;"><b>{velocidade_estimada} Mbps</b></span> / {banda_contratada} Mbps
+                </div>
+                """, unsafe_allow_html=True)
+
+        st.success(
+            "**Diagnóstico para o Suporte Técnico N1:** Os cômodos com mais de 2 paredes de obstáculo "
+            "apresentam queda acentuada na taxa de transferência do plano de 500Mb. "
+            "Caso o cliente relate lentidão nos fundos, a recomendação automática do sistema é o remanejamento do ponto central "
+            "ou a instalação de um nó Mesh."
+        )
 
 # =========================
-# COBERTURA RESIDENCIAL
+# 2. SIMULADOR TÉRMICO GERAL
 # =========================
-elif pagina == "Cobertura residencial":
-    st.subheader("🏠 Simulador de cobertura residencial")
+elif pagina == "Simulador Térmico Geral":
+    st.subheader("🗺️ Mapa Térmico Espacial de Cobertura")
 
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        largura = st.number_input("Largura da residência (m)", min_value=2.0, max_value=50.0, value=10.0, step=0.5)
-    with col2:
-        comprimento = st.number_input("Comprimento da residência (m)", min_value=2.0, max_value=50.0, value=8.0, step=0.5)
-    with col3:
-        obstaculos = st.number_input("Paredes/Obstáculos médios", min_value=0, max_value=10, value=1, step=1)
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        largura = st.number_input("Largura (m)", 2.0, 30.0, 10.0, 0.5)
+    with c2:
+        comprimento = st.number_input("Comprimento (m)", 2.0, 30.0, 8.0, 0.5)
+    with c3:
+        obstaculos = st.number_input("Obstáculos Médios", 0, 10, 2, 1)
 
-    col4, col5 = st.columns(2)
-    with col4:
-        router_x = st.slider("Posição X do Roteador (m)", 0.0, float(largura), float(largura / 2), 0.5)
-    with col5:
-        router_y = st.slider("Posição Y do Roteador (m)", 0.0, float(comprimento), float(comprimento / 2), 0.5)
-
-    xs = np.linspace(0, largura, 35)
-    ys = np.linspace(0, comprimento, 35)
+    xs = np.linspace(0, largura, 30)
+    ys = np.linspace(0, comprimento, 30)
     XX, YY = np.meshgrid(xs, ys)
-    distancias = np.sqrt((XX - router_x)**2 + (YY - router_y)**2)
+    distancias = np.sqrt((XX - largura/2)**2 + (YY - comprimento/2)**2)
 
     Z = np.zeros_like(distancias)
     for i in range(Z.shape[0]):
         for j in range(Z.shape[1]):
             Z[i, j] = estimar_rssi(distancias[i, j], obstaculos)
 
-    fig, ax = plt.subplots(figsize=(10, 5.5))
-    mapa = ax.imshow(
-        Z, origin="lower", extent=[0, largura, 0, comprimento],
-        aspect="auto", cmap="RdYlGn", vmin=-90, vmax=-40
-    )
-    ax.scatter([router_x], [router_y], marker="*", s=260, color="blue", edgecolors="white", label="Roteador")
-    ax.set_xlabel("Largura (m)")
-    ax.set_ylabel("Comprimento (m)")
-    ax.set_title("Mapa Térmico de RSSI da Residência")
-    ax.legend()
-    barra = fig.colorbar(mapa, ax=ax)
-    barra.set_label("RSSI estimado (dBm)")
+    fig, ax = plt.subplots(figsize=(9, 4.5))
+    fig.patch.set_facecolor('#0e1117')
+    ax.set_facecolor('#1b212c')
+    
+    mapa = ax.imshow(Z, origin="lower", extent=[0, largura, 0, comprimento], aspect="auto", cmap="RdYlGn", vmin=-90, vmax=-40)
+    ax.scatter([largura/2], [comprimento/2], marker="*", s=250, color="#58a6ff", label="Roteador Central")
+    ax.set_xlabel("Largura (m)", color="white")
+    ax.set_ylabel("Comprimento (m)", color="white")
+    ax.tick_params(colors="white")
+    ax.set_title("Propagação de Sinal na Residência", color="white")
+    
+    cbar = fig.colorbar(mapa, ax=ax)
+    cbar.set_label("RSSI (dBm)", color="white")
+    cbar.ax.yaxis.set_tick_params(color="white")
+
     st.pyplot(fig)
     plt.close(fig)
 
 # =========================
-# PLANTA BAIXA & DISPOSITIVOS (N1)
+# 3. SUPORTE N1/N2 & HISTÓRICO
 # =========================
-elif pagina == "Planta Baixa & Dispositivos (N1)":
-    st.subheader("🗺️ Mapeamento de Cômodos e Dispositivos por Atendimento")
-    st.write(
-        "Esta ferramenta permite ao suporte técnico N1 mapear onde estão os aparelhos do cliente "
-        "e calcular a perda de sinal exata com base na distância ao roteador e barreiras."
-    )
+elif pagina == "Suporte N1/N2 & Histórico":
+    st.subheader("🛠️ Registo de Ordens de Serviço & Histórico Técnico")
 
-    with st.form("form_dispositivos"):
+    with st.form("form_os"):
         c1, c2 = st.columns(2)
         with c1:
-            cliente_id = st.text_input("Nome do Cliente / OS", value="Cliente Exemplo")
-            comodo_alvo = st.selectbox("Cômodo do Dispositivo com Problema", ["Sala de Estar", "Quarto Casal", "Quarto Solteiro", "Cozinha", "Escritório / Home Office", "Área Externa"])
-            dispositivo = st.selectbox("Tipo de Aparelho", ["Smartphone", "Smart TV", "Notebook / PC", "Console de Videogame", "Câmera Wi-Fi"])
+            cliente = st.text_input("Nome do Cliente / OS", value="OS-8821")
+            tecnico = st.text_input("Técnico Responsável", value="Suporte N1")
+            comodo_problema = st.selectbox("Cômodo com Relato de Lentidão", ["Quarto 1", "Quarto 2", "Cozinha", "Área Externa"])
         with c2:
-            dist_comodo = st.slider("Distância estimada até o Roteador (metros)", 1.0, 30.0, 6.0, 0.5)
-            paredes_comodo = st.slider("Quantidade de Paredes entre o Roteador e o Cômodo", 0, 5, 2, 1)
-            rssi_referencia_livre = -40.0  # RSSI base junto ao roteador
+            plano_assinado = st.number_input("Plano (Mbps)", value=500)
+            velocidade_aferida = st.number_input("Velocidade Medida no Local (Mbps)", value=120.0)
+            rssi_medido = st.number_input("RSSI Real Medido (dBm)", value=-72.0)
 
-        analisar_dispositivo = st.form_submit_button("Analisar Perda e Qualidade do Dispositivo")
+        obs = st.text_area("Parecer Técnico / Solução Aplicada")
+        salvar = st.form_submit_button("Gravar Atendimento")
 
-    if analisar_dispositivo:
-        rssi_estimado_dispositivo = estimar_rssi(dist_comodo, paredes_comodo)
-        perda_total_db = abs(rssi_referencia_livre - rssi_estimado_dispositivo)
-        
-        st.markdown("---")
-        st.markdown(f"### 📊 Relatório de Diagnóstico para: **{dispositivo}** ({comodo_alvo})")
-        
-        col_a, col_b, col_c = st.columns(3)
-        col_a.metric("Sinal Estimado (RSSI)", f"{rssi_estimado_dispositivo:.1f} dBm")
-        col_b.metric("Perda de Sinal Calculada", f"{perda_total_db:.1f} dB")
-        col_c.metric("Qualidade do Link", classificar_rssi(rssi_estimado_dispositivo))
+    if salvar:
+        registro = {
+            "Data": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Cliente": cliente,
+            "Técnico": tecnico,
+            "Cômodo Afetado": comodo_problema,
+            "Plano (Mbps)": plano_assinado,
+            "Velocidade Medida (Mbps)": velocidade_aferida,
+            "RSSI Medido": rssi_medido,
+            "Status": "Analisado via RNA",
+            "Parecer": obs
+        }
+        salvar_atendimento(registro)
+        st.success("Atendimento gravado com sucesso no banco de dados do sistema!")
 
-        st.warning(
-            f"**Diagnóstico para o Suporte N1:** O dispositivo **{dispositivo}** localizado no cômodo **{comodo_alvo}** "
-            f"encontra-se a **{dist_comodo} metros** do roteador, atravessando **{paredes_comodo} paredes**. "
-            f"A atenuação estimada é de **{perda_total_db:.1f} dB**. "
-            "Se o cliente relatar lentidão ou quedas, recomenda-se reposicionar o roteador para o centro da casa ou adicionar um repetidor/mesh."
-        )
-
-# =========================
-# SUPORTE N1/N2
-# =========================
-elif pagina == "Suporte N1/N2":
-    st.subheader("🛠️ Registro Completo de Atendimento Técnico")
-
-    with st.form("form_atendimento"):
-        c1, c2 = st.columns(2)
-        with c1:
-            cliente = st.text_input("Cliente ou identificador")
-            protocolo = st.text_input("Protocolo / O.S.")
-            tecnico = st.text_input("Técnico responsável")
-            ambiente = st.selectbox("Ambiente", ["Sala", "Quarto", "Cozinha", "Escritório", "Corredor", "Outro"])
-        with c2:
-            queixa = st.selectbox("Queixa principal", ["Sinal fraco", "Lentidão", "Oscilação", "Queda de conexão", "Outro"])
-            distancia = st.number_input("Distância do roteador (m)", min_value=0.1, max_value=100.0, value=5.0, step=0.5)
-            obstaculos = st.number_input("Quantidade de obstáculos", min_value=0, max_value=20, value=1, step=1)
-            rssi_medido = st.number_input("RSSI medido (dBm)", min_value=-100.0, max_value=0.0, value=-70.0, step=1.0)
-
-        observacoes = st.text_area("Observações técnicas")
-        enviar = st.form_submit_button("Analisar e registrar atendimento")
-
-    if enviar:
-        if not cliente.strip():
-            st.error("Informe o cliente ou um identificador.")
-        else:
-            estimado = estimar_rssi(distancia, obstaculos)
-            diferenca = rssi_medido - estimado
-
-            registro = {
-                "Data/hora": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "Cliente/ID": cliente.strip(),
-                "Protocolo/O.S.": protocolo.strip(),
-                "Técnico": tecnico.strip(),
-                "Ambiente": ambiente,
-                "Queixa": queixa,
-                "Distância (m)": distancia,
-                "Obstáculos": obstaculos,
-                "RSSI medido (dBm)": rssi_medido,
-                "RSSI estimado (dBm)": round(estimado, 2),
-                "Diferença (dB)": round(diferenca, 2),
-                "Classificação do RSSI medido": classificar_rssi(rssi_medido),
-                "Observações": observacoes
-            }
-
-            st.markdown("### Resultado da análise")
-            a, b, c = st.columns(3)
-            a.metric("RSSI medido", f"{rssi_medido:.1f} dBm")
-            b.metric("RSSI estimado", f"{estimado:.1f} dBm")
-            c.metric("Diferença", f"{diferenca:+.1f} dB")
-
-            salvar_atendimento(registro)
-            st.success("Atendimento registrado no arquivo de histórico com sucesso!")
-
-# =========================
-# HISTÓRICO
-# =========================
-elif pagina == "Histórico":
-    st.subheader("📋 Histórico de atendimentos")
-
+    st.divider()
+    st.markdown("### 📋 Histórico Consolidado de Atendimentos")
     historico = carregar_historico()
-
     if historico.empty:
-        st.info("Nenhum atendimento registrado ainda.")
+        st.info("Nenhum atendimento registado até o momento.")
     else:
-        st.markdown("### 🔍 Filtros avançados")
-        f_col1, f_col2 = st.columns(2)
-
-        queixas_disponiveis = ["Todas"] + list(historico["Queixa"].unique())
-        filtro_queixa = f_col1.selectbox("Filtrar por queixa principal", queixas_disponiveis)
-
-        tecnicos_disponiveis = ["Todos"] + list(historico["Técnico"].astype(str).unique())
-        filtro_tecnico = f_col2.selectbox("Filtrar por técnico", tecnicos_disponiveis)
-
-        df_filtrado = historico.copy()
-        if filtro_queixa != "Todas":
-            df_filtrado = df_filtrado[df_filtrado["Queixa"] == filtro_queixa]
-        if filtro_tecnico != "Todos":
-            df_filtrado = df_filtrado[df_filtrado["Técnico"] == filtro_tecnico]
-
-        st.divider()
-        st.metric("Registros exibidos / Total", f"{len(df_filtrado)} / {len(historico)}")
-        st.dataframe(df_filtrado, use_container_width=True)
-
-        csv = df_filtrado.to_csv(index=False).encode("utf-8-sig")
-        st.download_button(
-            "⬇️ Baixar histórico filtrado em CSV",
-            data=csv,
-            file_name="historico_wifilab_filtrado.csv",
-            mime="text/csv"
-        )
+        st.dataframe(historico, use_container_width=True)
+        csv = historico.to_csv(index=False).encode("utf-8-sig")
+        st.download_button("Baixar Relatório CSV", data=csv, file_name="wifilab_historico_atendimentos.csv", mime="text/csv")
 
 st.divider()
-st.caption("WiFiLab — protótipo acadêmico desenvolvido para TCC.")
-        
+st.caption("WiFiLab Pro — Desenvolvido para TCC de Engenharia / Redes.")
