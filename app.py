@@ -127,9 +127,7 @@ def classificar_qualidade(rssi):
     return "🔴 Muito Fraco (Zona de Sombra)"
 
 def estimar_velocidade(rssi, plano, freq, num_wifi):
-    # Fator de frequência (2.4GHz sofre mais atenuação em paredes, 5GHz é mais rápido mas perde alcance)
     f_ator = 1.0 if "5GHz" in freq else 0.85
-    # Fator de congestionamento por múltiplos aparelhos Wi-Fi
     congest_ator = max(0.6, 1.0 - (num_wifi * 0.02))
     
     if rssi >= -50: vel = plano
@@ -197,11 +195,9 @@ if pagina == "Simulador Visual de Planta & Casa":
 
         btn_rodar = st.form_submit_button("Gerar Simulação na Planta Baixa")
 
-    # Tratamento da quantidade de Wi-Fi para cálculo
     n_wifi_val = 15 if num_wifi == "Até 15" else int(num_wifi)
     n_cabo_val = int(num_cabo)
 
-    # Coordenadas do Roteador na Planta baseada na nova seleção de locais
     coords_map = {
         "Sala": (2.0, 6.0),
         "Cozinha": (8.0, 6.0),
@@ -212,10 +208,8 @@ if pagina == "Simulador Visual de Planta & Casa":
     }
     rx, ry = coords_map.get(local_roteador, (2.0, 6.0))
 
-    # Construção da Planta Baixa com Símbolo Gráfico de Roteador com Antenas
     fig_casa = go.Figure()
 
-    # Cômodos
     fig_casa.add_shape(type="rect", x0=0, y0=4, x1=5, y1=8, fillcolor="#e0f2fe", opacity=0.5, line=dict(color="#0284c7", width=3))
     fig_casa.add_annotation(x=2.5, y=6.0, text="<b>Sala</b>", showarrow=False, font=dict(color="#0369a1", size=12))
 
@@ -228,7 +222,6 @@ if pagina == "Simulador Visual de Planta & Casa":
     fig_casa.add_shape(type="rect", x0=5, y0=0, x1=10, y1=4, fillcolor="#fce7f3", opacity=0.5, line=dict(color="#db2777", width=3))
     fig_casa.add_annotation(x=7.5, y=2.0, text="<b>Banheiro / Pátio</b>", showarrow=False, font=dict(color="#9d174d", size=12))
 
-    # Adicionar o Símbolo Gráfico de Roteador com Antenas (🛜 Estilizado)
     fig_casa.add_trace(go.Scatter(
         x=[rx], y=[ry],
         mode='markers+text',
@@ -238,7 +231,7 @@ if pagina == "Simulador Visual de Planta & Casa":
     ))
 
     fig_casa.update_layout(
-        title=f"Planta Baixa — Roteador posicionado em: <b>{local_roteador}</b>",
+        title=f"Planta Baixa — Roteador posicionado em: {local_roteador}",
         xaxis=dict(range=[-0.5, 10.5], showgrid=False, zeroline=False, showticklabels=False),
         yaxis=dict(range=[-0.5, 8.5], showgrid=False, zeroline=False, showticklabels=False),
         paper_bgcolor="#ffffff",
@@ -249,4 +242,70 @@ if pagina == "Simulador Visual de Planta & Casa":
 
     st.plotly_chart(fig_casa, use_container_width=True)
 
-    st.markdown("### 📊 Diagnóstico de Co
+    st.markdown("### 📊 Diagnóstico de Cobertura por Ambiente")
+    
+    ambientes = [
+        {"nome": "Sala", "x": 2.5, "y": 6.0, "paredes": 0 if local_roteador == "Sala" else 1},
+        {"nome": "Cozinha", "x": 7.5, "y": 6.0, "paredes": 0 if local_roteador == "Cozinha" else 1},
+        {"nome": "Quarto", "x": 2.5, "y": 2.0, "paredes": 1 if local_roteador == "Quarto" else 2},
+        {"nome": "Banheiro / Pátio", "x": 7.5, "y": 2.0, "paredes": 2},
+        {"nome": "2º Andar / Superior", "x": 5.0, "y": 7.5, "paredes": 1 if local_roteador == "2º Andar" else 2},
+    ]
+
+    col1, col2 = st.columns(2)
+    for i, amb in enumerate(ambientes):
+        dist = np.sqrt((amb["x"] - rx)**2 + (amb["y"] - ry)**2)
+        rssi = estimar_rssi(dist, amb["paredes"])
+        vel_util = estimar_velocidade(rssi, plano_contratado, freq_wifi, n_wifi_val)
+        qualidade = classificar_qualidade(rssi)
+
+        with (col1 if i % 2 == 0 else col2):
+            st.markdown(
+                f"""
+                <div class='metric-card'>
+                    <h4 style='margin-top: 0;'>📍 {amb['nome']}</h4>
+                    <p style='margin: 4px 0;'><b>Qualidade:</b> {qualidade}</p>
+                    <p style='margin: 4px 0;'><b>Velocidade Real:</b> <span style='color: #0284c7; font-size: 18px; font-weight: bold;'>{vel_util} Mbps</span> / {plano_contratado} Mbps</p>
+                    <p style='margin: 4px 0; font-size: 12px; color: #64748b;'>Distância: {dist:.1f}m | Barreiras: {amb['paredes']} paredes | Wi-Fi: {n_wifi_val} | Cabo: {n_cabo_val}</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+# =========================
+# 2. CONSULTORIA COMERCIAL & UPGRADE MESH (ISP)
+# =========================
+elif pagina == "Consultoria Comercial & Upgrade Mesh (ISP)":
+    st.subheader("💼 Módulo Comercial ISP: Fechamento de Vendas & Retenção")
+    st.write("Ferramenta de vendas para o atendente do provedor demonstrar de forma simples e visual ao assinante a necessidade do Mesh.")
+
+    with st.form("form_comercial_novo"):
+        c1, c2 = st.columns(2)
+        with c1:
+            nome_ass = st.text_input("Nome do Assinante", value="Maria Oliveira")
+            plano_atual = st.selectbox("Plano Contratado", [300, 500, 700, 1000], index=1)
+            local_fraco = st.selectbox("Onde o sinal está ruim?", ["Quarto", "Banheiro", "Pátio", "2º Andar"])
+        with c2:
+            distancia_lenta = st.slider("Distância estimada (metros)", 4.0, 18.0, 9.0, 0.5)
+            num_paredes = st.slider("Paredes no trajeto", 1, 5, 3)
+            preco_mesh = st.number_input("Valor da Mensalidade do Mesh Extra (R$)", value=19.90, step=5.0)
+
+        gerar_proposta = st.form_submit_button("Gerar Proposta Comercial Pronta")
+
+    if gerar_proposta:
+        rssi_v = estimar_rssi(distancia_lenta, num_paredes)
+        vel_v = estimar_velocidade(rssi_v, plano_atual, "5GHz", 4)
+        nos_rec = 1 if num_paredes <= 3 else 2
+
+        st.markdown("---")
+        st.markdown(
+            f"""
+            <div class='commercial-card'>
+                <h3 style='color: #0369a1; margin-top: 0;'>📄 Proposta Comercial para {nome_ass}</h3>
+                <p><b>Diagnóstico:</b> O plano de <b>{plano_atual} Mbps</b> entrega apenas <span style='color: #dc2626; font-size: 16px; font-weight: bold;'>{vel_v} Mbps</span> no local ({local_fraco}).</p>
+                <p><b>Motivo:</b> Bloqueio físico de {num_paredes} paredes de alvenaria.</p>
+                <hr style='border-color: #bae6fd;'>
+                <h4 style='color: #0284c7; margin-bottom: 5px;'>💡 Solução Sugerida:</h4>
+                <p>Instalação de <b>{nos_rec} Roteador(es) Wi-Fi Mesh</b> para cobertura total da residência.</p>
+                <h4 style='color: #0369a1; margin-top: 15px; margin-bottom: 5px;'>💰 Vantagem Comercial:</h4>
+                <p style='font-size: 18px; color: #1e293b;'><b>
