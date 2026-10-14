@@ -52,6 +52,15 @@ st.markdown(
             border-radius: 12px; 
             margin-bottom: 15px; 
         }
+
+        .router-card {
+            background: #ffffff;
+            border-left: 5px solid #0284c7;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+        }
         
         .stButton>button {
             background: linear-gradient(90deg, #0284c7 0%, #06b6d4 100%);
@@ -136,14 +145,15 @@ def salvar_atendimento(registro):
     historico.to_csv(ARQUIVO_HISTORICO, index=False, encoding="utf-8-sig")
 
 # =========================
-# MENU PRINCIPAL
+# MENU PRINCIPAL (ATUALIZADO E FUNCIONAL)
 # =========================
 pagina = st.sidebar.radio(
     "MENU PRINCIPAL",
     [
         "Simulador Visual de Planta & Casa",
         "Consultoria Comercial & Upgrade Mesh (ISP)",
-        "Suporte Técnico & Histórico"
+        "Base de Conhecimento de Roteadores (Bancada)",
+        "Suporte Técnico & Histórico de O.S."
     ]
 )
 
@@ -151,7 +161,7 @@ st.sidebar.divider()
 st.sidebar.caption("WiFiLab Pro | Plataforma Oficial ISPs")
 
 # =========================
-# 1. SIMULADOR VISUAL DE PLANTA & CASA (COM MÓVEIS E PAREDES)
+# 1. SIMULADOR VISUAL DE PLANTA & CASA
 # =========================
 if pagina == "Simulador Visual de Planta & Casa":
     st.subheader("🏡 Maquete Interativa da Residência & Distribuição de Sinal")
@@ -169,7 +179,6 @@ if pagina == "Simulador Visual de Planta & Casa":
     with c_op2:
         plano_contratado = st.number_input("Plano de Internet Contratado (Mbps)", value=500, step=50)
 
-    # Coordenadas do Roteador com base na escolha
     if "Sala" in local_roteador:
         rx, ry = 2.0, 6.0
     elif "Corredor" in local_roteador:
@@ -177,27 +186,20 @@ if pagina == "Simulador Visual de Planta & Casa":
     else:
         rx, ry = 8.0, 6.0
 
-    # Construção da Planta Baixa Gráfica com Plotly (Paredes, Cômodos e Móveis)
     fig_casa = go.Figure()
 
-    # Desenho dos Cômodos (Retângulos da Planta)
-    # Sala de Estar
     fig_casa.add_shape(type="rect", x0=0, y0=4, x1=5, y1=8, fillcolor="#e0f2fe", opacity=0.5, line=dict(color="#0284c7", width=3))
     fig_casa.add_annotation(x=2.5, y=6.0, text="<b>Sala de Estar</b><br>(Sofá, TV)", showarrow=False, font=dict(color="#0369a1", size=12))
 
-    # Cozinha / Área de Serviço
     fig_casa.add_shape(type="rect", x0=5, y0=4, x1=10, y1=8, fillcolor="#fef3c7", opacity=0.5, line=dict(color="#d97706", width=3))
     fig_casa.add_annotation(x=7.5, y=6.0, text="<b>Cozinha</b><br>(Geladeira, Fogão)", showarrow=False, font=dict(color="#92400e", size=12))
 
-    # Quarto 1
     fig_casa.add_shape(type="rect", x0=0, y0=0, x1=5, y1=4, fillcolor="#f1f5f9", opacity=0.5, line=dict(color="#64748b", width=3))
     fig_casa.add_annotation(x=2.5, y=2.0, text="<b>Quarto 1</b><br>(Cama Casal)", showarrow=False, font=dict(color="#334155", size=12))
 
-    # Quarto 2 (Suíte / Fundos)
     fig_casa.add_shape(type="rect", x0=5, y0=0, x1=10, y1=4, fillcolor="#f1f5f9", opacity=0.5, line=dict(color="#64748b", width=3))
     fig_casa.add_annotation(x=7.5, y=2.0, text="<b>Quarto 2 / Suíte</b><br>(Escritório / Cama)", showarrow=False, font=dict(color="#334155", size=12))
 
-    # Adicionar o Roteador na Planta
     fig_casa.add_trace(go.Scatter(
         x=[rx], y=[ry],
         mode='markers+text',
@@ -218,10 +220,8 @@ if pagina == "Simulador Visual de Planta & Casa":
 
     st.plotly_chart(fig_casa, use_container_width=True)
 
-    # Diagnóstico Inteligente para o Cliente/Banca
     st.markdown("### 📊 Diagnóstico de Cobertura por Ambiente")
     
-    # Cálculo simulado para cada cômodo com base na distância ao roteador escolhido
     ambientes = [
         {"nome": "Sala de Estar", "x": 2.5, "y": 6.0, "paredes": 0 if "Sala" in local_roteador else 1},
         {"nome": "Cozinha", "x": 7.5, "y": 6.0, "paredes": 1 if "Cozinha" in local_roteador else 2},
@@ -249,20 +249,12 @@ if pagina == "Simulador Visual de Planta & Casa":
                 unsafe_allow_html=True
             )
 
-    st.info(
-        "💡 **Didática para a Apresentação:** A planta mostra claramente como as paredes e os móveis geram atenuação no sinal. "
-        "Nos cômodos distantes (como o Quarto 2), a perda de velocidade justifica perfeitamente a oferta de um ponto Mesh adicional."
-    )
-
 # =========================
 # 2. CONSULTORIA COMERCIAL & UPGRADE MESH (ISP)
 # =========================
 elif pagina == "Consultoria Comercial & Upgrade Mesh (ISP)":
     st.subheader("💼 Módulo Comercial ISP: Fechamento de Vendas & Retenção")
-    st.write(
-        "Ferramenta de vendas para o atendente do provedor demonstrar de forma simples e visual ao assinante "
-        "o motivo de sua internet rápida não chegar em todos os cômodos, oferecendo um upgrade de valor mensal."
-    )
+    st.write("Ferramenta de vendas para o atendente do provedor demonstrar de forma simples e visual ao assinante a necessidade do Mesh.")
 
     with st.form("form_comercial_novo"):
         c1, c2 = st.columns(2)
@@ -273,3 +265,151 @@ elif pagina == "Consultoria Comercial & Upgrade Mesh (ISP)":
         with c2:
             distancia_lenta = st.slider("Distância estimada (metros)", 4.0, 18.0, 9.0, 0.5)
             num_paredes = st.slider("Paredes no trajeto", 1, 5, 3)
+            preco_mesh = st.number_input("Valor da Mensalidade do Mesh Extra (R$)", value=19.90, step=5.0)
+
+        gerar_proposta = st.form_submit_button("Gerar Proposta Comercial Pronta")
+
+    if gerar_proposta:
+        rssi_v = estimar_rssi(distancia_lenta, num_paredes)
+        vel_v = estimar_velocidade(rssi_v, plano_atual)
+        nos_rec = 1 if num_paredes <= 3 else 2
+
+        st.markdown("---")
+        st.markdown(
+            f"""
+            <div class='commercial-card'>
+                <h3 style='color: #0369a1; margin-top: 0;'>📄 Proposta Comercial para {nome_ass}</h3>
+                <p><b>Diagnóstico:</b> O plano de <b>{plano_atual} Mbps</b> entrega apenas <span style='color: #dc2626; font-size: 16px; font-weight: bold;'>{vel_v} Mbps</span> no local ({local_fraco}).</p>
+                <p><b>Motivo:</b> Bloqueio físico de {num_paredes} paredes de alvenaria.</p>
+                <hr style='border-color: #bae6fd;'>
+                <h4 style='color: #0284c7; margin-bottom: 5px;'>💡 Solução Sugerida:</h4>
+                <p>Instalação de <b>{nos_rec} Roteador(es) Wi-Fi Mesh</b> para cobertura total da residência.</p>
+                <h4 style='color: #0369a1; margin-top: 15px; margin-bottom: 5px;'>💰 Vantagem Comercial:</h4>
+                <p style='font-size: 18px; color: #1e293b;'><b>Acrésimo de R$ {preco_mesh:.2f} / mês</b> na fatura do cliente (Garantia de fidelização e zero cancelamentos).</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        st.success("Proposta gerada com sucesso! Pronta para apresentação ao assinante.")
+
+# =========================
+# 3. BASE DE CONHECIMENTO DE ROTEADORES (COM DADOS REAIS DE BANCADA E LEDS)
+# =========================
+elif pagina == "Base de Conhecimento de Roteadores (Bancada)":
+    st.subheader("📊 Guia Técnico de Roteadores & Comportamento de LEDs")
+    st.write(
+        "Base oficial baseada em testes reais de laboratório (Bancada ISP). "
+        "Consulte a banda máxima obtida via **Cabo** e **Wi-Fi** para cada modelo, além do diagnóstico dos indicadores luminosos (LEDs)."
+    )
+
+    roteadores_db = [
+        {
+            "modelo": "Greatek 1500AX",
+            "cabo_down": "926.8 Mbps", "cabo_up": "942.6 Mbps",
+            "wifi_down": "754.6 Mbps", "wifi_up": "524.1 Mbps",
+            "led_verde": "🟢 Conexão de Internet ativa e estável.",
+            "led_piscas": "🟡 Piscando: Tráfego de dados ativo (normal durante downloads/jogos).",
+            "led_vermelho": "🔴 Vermelho/Apagado: Falha na conexão WAN (verificar cabo de fibra/ONU)."
+        },
+        {
+            "modelo": "Huawei AX2",
+            "cabo_down": "923.3 Mbps", "cabo_up": "935.2 Mbps",
+            "wifi_down": "681.0 Mbps", "wifi_up": "396.4 Mbps",
+            "led_verde": "🟢 Fixo: Aparelho conectado à internet sem problemas.",
+            "led_piscas": "🟡 Piscando Laranja: Emparelhamento WPS ou a iniciar.",
+            "led_vermelho": "🔴 Vermelho Fixo: Sem conexão com a internet (Queda de link)."
+        },
+        {
+            "modelo": "Greatek 1200",
+            "cabo_down": "919.1 Mbps", "cabo_up": "933.7 Mbps",
+            "wifi_down": "520.9 Mbps", "wifi_up": "343.9 Mbps",
+            "led_verde": "🟢 Aceso: Sistema operando corretamente.",
+            "led_vermelho": "🔴 Vermelho: Erro de WAN ou cabo desconectado."
+        },
+        {
+            "modelo": "Huawei AX3S",
+            "cabo_down": "912.6 Mbps", "cabo_up": "924.0 Mbps",
+            "wifi_down": "540.3 Mbps", "wifi_up": "544.4 Mbps",
+            "led_verde": "🟢 Fixo: Tudo operacional.",
+            "led_vermelho": "🔴 Vermelho: Sem acesso à rede remota."
+        },
+        {
+            "modelo": "D-Link DIR-2150",
+            "cabo_down": "911.9 Mbps", "cabo_up": "928.2 Mbps",
+            "wifi_down": "359.9 Mbps", "wifi_up": "405.7 Mbps",
+            "led_verde": "🟢 Verde Fixo: Internet e Wi-Fi ativos.",
+            "led_vermelho": "🔴 Laranja/Vermelho: Sem IP na porta WAN."
+        },
+        {
+            "modelo": "Intelbras RG1200",
+            "cabo_down": "854.1 Mbps", "cabo_up": "863.1 Mbps",
+            "wifi_down": "435.2 Mbps", "wifi_up": "446.6 Mbps",
+            "led_verde": "🟢 Azul/Verde Fixo: Operação normal.",
+            "led_vermelho": "🔴 Vermelho: Cabo de rede da ONU desconectado."
+        }
+    ]
+
+    for rot in roteadores_db:
+        st.markdown(
+            f"""
+            <div class='router-card'>
+                <h3 style='color: #0284c7; margin-top: 0;'>📡 {rot['modelo']}</h3>
+                <div style='display: flex; gap: 20px; margin-bottom: 10px;'>
+                    <div><b>💻 Desempenho via Cabo:</b> Down: {rot['cabo_down']} | Up: {rot['cabo_up']}</div>
+                    <div><b>📶 Desempenho via Wi-Fi:</b> Down: {rot['wifi_down']} | Up: {rot['wifi_up']}</div>
+                </div>
+                <hr style='border-color: #e2e8f0; margin: 8px 0;'>
+                <p style='margin: 4px 0; font-size: 13px;'><b>Diagnóstico de LEDs:</b><br>
+                {rot['led_verde']}<br>
+                {rot['led_piscas']}<br>
+                {rot['led_vermelho']}</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+# =========================
+# 4. SUPORTE TÉCNICO & HISTÓRICO DE O.S.
+# =========================
+elif pagina == "Suporte Técnico & Histórico de O.S.":
+    st.subheader("🛠️ Registo de Atendimento Técnico e Ordens de Serviço (O.S.)")
+    st.write("Guarde o histórico de atendimentos realizados para consulta rápida e auditoria técnica do provedor.")
+
+    with st.form("form_os_novo"):
+        c1, c2 = st.columns(2)
+        with c1:
+            os_num = st.text_input("Número da O.S.", value="OS-4490")
+            tecnico = st.text_input("Técnico Responsável", value="Equipe N1")
+            comodo_prob = st.text_input("Ambiente Afetado", value="Quarto dos Fundos")
+        with c2:
+            plano_os = st.number_input("Plano (Mbps)", value=500)
+            vel_aferida = st.number_input("Velocidade Medida (Mbps)", value=110.0)
+
+        parecer = st.text_area("Parecer Técnico", value="Orientado o cliente sobre barreiras físicas e sugerido upgrade para Mesh.")
+        salvar = st.form_submit_button("Guardar Atendimento")
+
+    if salvar:
+        registro = {
+            "Data": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "O.S.": os_num,
+            "Técnico": tecnico,
+            "Ambiente": comodo_prob,
+            "Plano": plano_os,
+            "Velocidade Real": vel_aferida,
+            "Parecer": parecer
+        }
+        salvar_atendimento(registro)
+        st.success("Atendimento guardado com sucesso!")
+
+    st.divider()
+    st.markdown("### 📋 Histórico Consolidado de O.S.")
+    hist_df = carregar_historico()
+    if hist_df.empty:
+        st.info("Nenhum atendimento registado ainda.")
+    else:
+        st.dataframe(hist_df, use_container_width=True)
+        csv = hist_df.to_csv(index=False).encode("utf-8-sig")
+        st.download_button("Descarregar Relatório CSV", data=csv, file_name="relatorio_wifilab.csv", mime="text/csv")
+
+st.divider()
+st.markdown("<p style='text-align: center; color: #64748b; font-size: 13px;'>WiFiLab Pro — Criado e Desenvolvido por <b>Dayrlane Sousa</b> | TCC Engenharia de Redes</p>", unsafe_allow_html=True)
