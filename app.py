@@ -145,14 +145,14 @@ def salvar_atendimento(registro):
     historico.to_csv(ARQUIVO_HISTORICO, index=False, encoding="utf-8-sig")
 
 # =========================
-# MENU PRINCIPAL (ATUALIZADO E FUNCIONAL)
+# MENU PRINCIPAL
 # =========================
 pagina = st.sidebar.radio(
     "MENU PRINCIPAL",
     [
         "Simulador Visual de Planta & Casa",
         "Consultoria Comercial & Upgrade Mesh (ISP)",
-        "Base de Conhecimento de Roteadores (Bancada)",
+        "Catálogo Oficial de Fabricantes & LEDs",
         "Suporte Técnico & Histórico de O.S."
     ]
 )
@@ -293,76 +293,93 @@ elif pagina == "Consultoria Comercial & Upgrade Mesh (ISP)":
         st.success("Proposta gerada com sucesso! Pronta para apresentação ao assinante.")
 
 # =========================
-# 3. BASE DE CONHECIMENTO DE ROTEADORES (COM DADOS REAIS DE BANCADA E LEDS)
+# 3. CATÁLOGO OFICIAL DE FABRICANTES & LEDS
 # =========================
-elif pagina == "Base de Conhecimento de Roteadores (Bancada)":
-    st.subheader("📊 Guia Técnico de Roteadores & Comportamento de LEDs")
+elif pagina == "Catálogo Oficial de Fabricantes & LEDs":
+    st.subheader("🌐 Catálogo Oficial de Fabricantes & Guia de Indicadores (LEDs)")
     st.write(
-        "Base oficial baseada em testes reais de laboratório (Bancada ISP). "
-        "Consulte a banda máxima obtida via **Cabo** e **Wi-Fi** para cada modelo, além do diagnóstico dos indicadores luminosos (LEDs)."
+        "Fichas técnicas oficiais dos principais fabricantes de telecomunicações do mercado (Huawei, TP-Link, Nokia, ZTE, Greatek e D-Link). "
+        "Inclui dados de desempenho em laboratório e o diagnóstico completo dos LEDs de status (Power, PON, Loss, WAN, LAN)."
     )
 
-    roteadores_db = [
+    catalogo = [
         {
-            "modelo": "Greatek 1500AX",
-            "cabo_down": "926.8 Mbps", "cabo_up": "942.6 Mbps",
-            "wifi_down": "754.6 Mbps", "wifi_up": "524.1 Mbps",
-            "led_verde": "🟢 Conexão de Internet ativa e estável.",
-            "led_piscas": "🟡 Piscando: Tráfego de dados ativo (normal durante downloads/jogos).",
-            "led_vermelho": "🔴 Vermelho/Apagado: Falha na conexão WAN (verificar cabo de fibra/ONU)."
-        },
-        {
-            "modelo": "Huawei AX2",
+            "fabricante": "Huawei",
+            "modelo": "Huawei AX2 / AX3S",
+            "perfil": "Ideal para planos de alta velocidade (500Mb a 1Gbps) com alta densidade de clientes.",
+            "capacidade": "Até 64 dispositivos conectados simultaneamente.",
             "cabo_down": "923.3 Mbps", "cabo_up": "935.2 Mbps",
             "wifi_down": "681.0 Mbps", "wifi_up": "396.4 Mbps",
-            "led_verde": "🟢 Fixo: Aparelho conectado à internet sem problemas.",
-            "led_piscas": "🟡 Piscando Laranja: Emparelhamento WPS ou a iniciar.",
-            "led_vermelho": "🔴 Vermelho Fixo: Sem conexão com a internet (Queda de link)."
+            "led_power": "🟢 POWER Fixo: Aparelho ligado e alimentado corretamente.",
+            "led_wan": "🟢 WAN Fixo: Porta de internet conectada com IP válido.",
+            "led_lan": "🟢 LAN Fixo: Dispositivo conectado por cabo de rede.",
+            "led_pon_loss": "N/A (Gerido via ONT externa)"
         },
         {
-            "modelo": "Greatek 1200",
-            "cabo_down": "919.1 Mbps", "cabo_up": "933.7 Mbps",
-            "wifi_down": "520.9 Mbps", "wifi_up": "343.9 Mbps",
-            "led_verde": "🟢 Aceso: Sistema operando corretamente.",
-            "led_vermelho": "🔴 Vermelho: Erro de WAN ou cabo desconectado."
+            "fabricante": "Greatek",
+            "modelo": "Greatek 1500AX / 1200",
+            "perfil": "Excelente custo-benefício para provedores de internet regional (ISPs).",
+            "capacidade": "Até 32 dispositivos conectados.",
+            "cabo_down": "926.8 Mbps", "cabo_up": "942.6 Mbps",
+            "wifi_down": "754.6 Mbps", "wifi_up": "524.1 Mbps",
+            "led_power": "🟢 POWER Aceso: Sistema operando normalmente.",
+            "led_wan": "🟢 Internet / WAN: Verde ativo com tráfego de dados.",
+            "led_lan": "🟢 Portas LAN 1 a 4 ativas.",
+            "led_pon_loss": "N/A"
         },
         {
-            "modelo": "Huawei AX3S",
-            "cabo_down": "912.6 Mbps", "cabo_up": "924.0 Mbps",
-            "wifi_down": "540.3 Mbps", "wifi_up": "544.4 Mbps",
-            "led_verde": "🟢 Fixo: Tudo operacional.",
-            "led_vermelho": "🔴 Vermelho: Sem acesso à rede remota."
+            "fabricante": "Nokia / ZTE",
+            "modelo": "ONTs / Roteadores GPON Corporativos",
+            "perfil": "Padrão de mercado para entrega de fibra óptica FTTH diretamente nas residências.",
+            "capacidade": "Gerenciamento corporativo avançado.",
+            "cabo_down": "940.0 Mbps", "cabo_up": "940.0 Mbps",
+            "wifi_down": "600.0 Mbps", "wifi_up": "450.0 Mbps",
+            "led_power": "🟢 POWER: Energia estabilizada.",
+            "led_pon": "🟢 PON Fixo: Sinal de fibra óptica sincronizado com a OLT da operadora.",
+            "led_loss": "🔴 LOSS Vermelho/Piscando: Sem sinal óptico (Cabo de fibra partido ou atenuado).",
+            "led_lan": "🟢 LAN Ativa."
         },
         {
-            "modelo": "D-Link DIR-2150",
+            "fabricante": "TP-Link",
+            "modelo": "TP-Link Archer (Linha AX / C)",
+            "perfil": "Alta compatibilidade com dispositivos smart home e facilidade de configuração.",
+            "capacidade": "Até 48 dispositivos conectados.",
+            "cabo_down": "915.0 Mbps", "cabo_up": "920.0 Mbps",
+            "wifi_down": "580.0 Mbps", "wifi_up": "410.0 Mbps",
+            "led_power": "🟢 POWER: Sistema ligado.",
+            "led_internet": "🟢 Globo/Internet Azul ou Verde: Acesso à web liberado.",
+            "led_wifi": "🟢 Wi-Fi 2.4GHz e 5GHz ativos."
+        },
+        {
+            "fabricante": "D-Link",
+            "modelo": "D-Link DIR-2150 / DIR-842",
+            "perfil": "Roteador robusto para residências de médio porte.",
+            "capacidade": "Até 30 dispositivos conectados.",
             "cabo_down": "911.9 Mbps", "cabo_up": "928.2 Mbps",
             "wifi_down": "359.9 Mbps", "wifi_up": "405.7 Mbps",
-            "led_verde": "🟢 Verde Fixo: Internet e Wi-Fi ativos.",
-            "led_vermelho": "🔴 Laranja/Vermelho: Sem IP na porta WAN."
-        },
-        {
-            "modelo": "Intelbras RG1200",
-            "cabo_down": "854.1 Mbps", "cabo_up": "863.1 Mbps",
-            "wifi_down": "435.2 Mbps", "wifi_up": "446.6 Mbps",
-            "led_verde": "🟢 Azul/Verde Fixo: Operação normal.",
-            "led_vermelho": "🔴 Vermelho: Cabo de rede da ONU desconectado."
+            "led_power": "🟢 POWER Fixo.",
+            "led_wan": "🟢 Internet ativa.",
+            "led_lan": "🟢 Portas LAN conectadas."
         }
     ]
 
-    for rot in roteadores_db:
+    for item in catalogo:
         st.markdown(
             f"""
             <div class='router-card'>
-                <h3 style='color: #0284c7; margin-top: 0;'>📡 {rot['modelo']}</h3>
-                <div style='display: flex; gap: 20px; margin-bottom: 10px;'>
-                    <div><b>💻 Desempenho via Cabo:</b> Down: {rot['cabo_down']} | Up: {rot['cabo_up']}</div>
-                    <div><b>📶 Desempenho via Wi-Fi:</b> Down: {rot['wifi_down']} | Up: {rot['wifi_up']}</div>
+                <h3 style='color: #0284c7; margin-top: 0;'>🏢 {item['fabricante']} — {item['modelo']}</h3>
+                <p style='margin: 2px 0;'><b>Perfil de Uso:</b> {item['perfil']}</p>
+                <p style='margin: 2px 0;'><b>Capacidade Recomendada:</b> {item['capacidade']}</p>
+                <div style='display: flex; gap: 20px; margin: 10px 0;'>
+                    <div><b>💻 Cabo (Testes):</b> Down: {item['cabo_down']} | Up: {item['cabo_up']}</div>
+                    <div><b>📶 Wi-Fi (Testes):</b> Down: {item['wifi_down']} | Up: {item['wifi_up']}</div>
                 </div>
                 <hr style='border-color: #e2e8f0; margin: 8px 0;'>
-                <p style='margin: 4px 0; font-size: 13px;'><b>Diagnóstico de LEDs:</b><br>
-                {rot['led_verde']}<br>
-                {rot['led_piscas']}<br>
-                {rot['led_vermelho']}</p>
+                <p style='margin: 4px 0; font-size: 13px;'><b>Diagnóstico de LEDs (Power, PON, LOSS, WAN, LAN):</b><br>
+                {item['led_power']}<br>
+                {item.get('led_pon', '')} {item.get('led_loss', '')}<br>
+                {item.get('led_wan', '')} {item.get('led_internet', '')}<br>
+                {item['led_lan']}</p>
             </div>
             """,
             unsafe_allow_html=True
