@@ -1,59 +1,56 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from datetime import datetime
 from pathlib import Path
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPRegressor
-from sklearn.metrics import mean_absolute_error
 
 # =========================
 # CONFIGURAÇÃO DO APLICATIVO
 # =========================
 st.set_page_config(
-    page_title="WiFiLab",
+    page_title="WiFiLab Pro",
     page_icon="📶",
     layout="wide"
 )
 
-# Estilização inspirada na paleta da logo (Azul corporativo, Ciano/Verde-água e Branco limpo)
+# Estilização limpa, profissional e iluminada (Fundo claro e moderno)
 st.markdown(
     """
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
         .stApp { 
-            background: linear-gradient(135deg, #090d16 0%, #0f172a 100%); 
-            color: #f8fafc; 
+            background-color: #f8fafc; 
+            color: #1e293b; 
             font-family: 'Inter', sans-serif;
         }
         .block-container { padding-top: 1.5rem; }
         
         [data-testid='stSidebar'] { 
-            background: linear-gradient(180deg, #0f172a 0%, #090d16 100%);
-            border-right: 1px solid #1e293b; 
+            background-color: #ffffff;
+            border-right: 1px solid #e2e8f0; 
         }
-        [data-testid='stSidebar'] * { color: #f1f5f9; }
+        [data-testid='stSidebar'] * { color: #334155; }
         
-        .room-card { 
-            background: rgba(30, 41, 59, 0.7); 
-            border: 1px solid #06b6d4; 
-            padding: 15px; 
-            border-radius: 10px; 
-            margin-bottom: 10px; 
-            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.1);
-        }
-        
-        .commercial-card { 
-            background: linear-gradient(135deg, #0f172a 0%, #0b3c5d 100%); 
-            border: 2px solid #06b6d4; 
+        .metric-card { 
+            background: #ffffff; 
+            border: 1px solid #e2e8f0; 
             padding: 20px; 
             border-radius: 12px; 
             margin-bottom: 15px; 
-            box-shadow: 0 8px 24px rgba(6, 182, 212, 0.15);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        
+        .commercial-card { 
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); 
+            border: 2px solid #0284c7; 
+            padding: 25px; 
+            border-radius: 12px; 
+            margin-bottom: 15px; 
         }
         
         .stButton>button {
@@ -62,12 +59,8 @@ st.markdown(
             font-weight: 600;
             border: none;
             border-radius: 8px;
-            padding: 0.5rem 1rem;
-            transition: all 0.3s ease;
-        }
-        .stButton>button:hover {
-            opacity: 0.9;
-            box-shadow: 0 0 15px rgba(6, 182, 212, 0.5);
+            padding: 0.6rem 1.2rem;
+            width: 100%;
         }
     </style>
     """,
@@ -81,16 +74,16 @@ try:
     st.sidebar.image("WA_1791973476738.png", use_container_width=True)
 except Exception:
     st.sidebar.markdown(
-        "<div style='text-align: center; padding: 15px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 12px; border: 1px solid #06b6d4; margin-bottom: 15px;'>"
-        "<h2 style='color: #06b6d4; margin: 0;'>WiFiLab</h2>"
+        "<div style='text-align: center; padding: 15px; background: #e0f2fe; border-radius: 12px; border: 1px solid #0284c7; margin-bottom: 15px;'>"
+        "<h2 style='color: #0284c7; margin: 0;'>WiFiLab Pro</h2>"
         "</div>",
         unsafe_allow_html=True
     )
 
 st.sidebar.markdown(
     "<div style='text-align: center; padding: 8px 0 15px 0;'>"
-    "<p style='font-size: 13px; color: #e2e8f0; margin: 0; font-weight: bold;'>Criado por Dayrlane Sousa</p>"
-    "<p style='font-size: 11px; color: #06b6d4; margin: 2px 0 0 0;'>TCC Engenharia de Redes</p>"
+    "<p style='font-size: 14px; color: #1e293b; margin: 0; font-weight: bold;'>Criado por Dayrlane Sousa</p>"
+    "<p style='font-size: 11px; color: #0284c7; margin: 2px 0 0 0;'>TCC Engenharia de Redes</p>"
     "</div>",
     unsafe_allow_html=True
 )
@@ -98,30 +91,12 @@ st.sidebar.markdown(
 # =========================
 # DADOS DE REFERÊNCIA DA RNA
 # =========================
-X_REF = np.array([
-    [1.5, 0],
-    [3.0, 0],
-    [4.0, 0],
-    [5.5, 1],
-    [6.5, 2],
-    [5.0, 2],
-    [8.0, 3]
-], dtype=float)
-
+X_REF = np.array([[1.5, 0], [3.0, 0], [4.0, 0], [5.5, 1], [6.5, 2], [5.0, 2], [8.0, 3]], dtype=float)
 Y_REF = np.array([-40, -55, -60, -68, -72, -75, -85], dtype=float)
 
 @st.cache_resource
 def treinar_rna():
-    modelo = make_pipeline(
-        StandardScaler(),
-        MLPRegressor(
-            hidden_layer_sizes=(8, 4),
-            activation="relu",
-            solver="lbfgs",
-            max_iter=2000,
-            random_state=42
-        )
-    )
+    modelo = make_pipeline(StandardScaler(), MLPRegressor(hidden_layer_sizes=(8, 4), activation="relu", solver="lbfgs", max_iter=2000, random_state=42))
     modelo.fit(X_REF, Y_REF)
     return modelo
 
@@ -131,34 +106,28 @@ def estimar_rssi(distancia, obstaculos):
     entrada = np.array([[max(float(distancia), 0.1), max(int(obstaculos), 0)]])
     return float(rna.predict(entrada)[0])
 
-def classificar_rssi(rssi):
+def classificar_qualidade(rssi):
     if rssi >= -50:
-        return "Excelente (Ideal para 4K/Jogos)"
+        return "🟢 Excelente (Jogos e 4K perfeitos)"
     elif rssi >= -60:
-        return "Bom (Estável)"
+        return "🟢 Bom (Estável para o dia a dia)"
     elif rssi >= -67:
-        return "Razoável (Navegação Padrão)"
+        return "🟡 Razoável (Navegação Padrão)"
     elif rssi >= -75:
-        return "Fraco (Possíveis Lentidões)"
-    return "Muito Fraco (Área de Sombra)"
+        return "🟠 Fraco (Pode travar)"
+    return "🔴 Muito Fraco (Zona de Sombra)"
 
-def estimar_velocidade_500mb(rssi):
-    if rssi >= -50:
-        return 480
-    elif rssi >= -60:
-        return 380
-    elif rssi >= -67:
-        return 220
-    elif rssi >= -75:
-        return 90
-    else:
-        return 20
+def estimar_velocidade(rssi, plano):
+    if rssi >= -50: return plano
+    elif rssi >= -60: return int(plano * 0.8)
+    elif rssi >= -67: return int(plano * 0.5)
+    elif rssi >= -75: return int(plano * 0.2)
+    return int(plano * 0.05)
 
 ARQUIVO_HISTORICO = Path("historico_wifilab.csv")
 
 def carregar_historico():
-    if ARQUIVO_HISTORICO.exists():
-        return pd.read_csv(ARQUIVO_HISTORICO)
+    if ARQUIVO_HISTORICO.exists(): return pd.read_csv(ARQUIVO_HISTORICO)
     return pd.DataFrame()
 
 def salvar_atendimento(registro):
@@ -167,17 +136,14 @@ def salvar_atendimento(registro):
     historico.to_csv(ARQUIVO_HISTORICO, index=False, encoding="utf-8-sig")
 
 # =========================
-# MENU LATERAL
+# MENU PRINCIPAL
 # =========================
 pagina = st.sidebar.radio(
     "MENU PRINCIPAL",
     [
-        "Propagação de Ondas em Tempo Real (Planta)",
-        "Gerador de Planta Baixa (500Mb)",
-        "Simulação 3D Interativa",
+        "Simulador Visual de Planta & Casa",
         "Consultoria Comercial & Upgrade Mesh (ISP)",
-        "Simulador Térmico Geral",
-        "Suporte N1/N2 & Histórico"
+        "Suporte Técnico & Histórico"
     ]
 )
 
@@ -185,198 +151,125 @@ st.sidebar.divider()
 st.sidebar.caption("WiFiLab Pro | Plataforma Oficial ISPs")
 
 # =========================
-# 1. PROPAGAÇÃO DE ONDAS EM TEMPO REAL SOBRE PLANTA
+# 1. SIMULADOR VISUAL DE PLANTA & CASA (COM MÓVEIS E PAREDES)
 # =========================
-if pagina == "Propagação de Ondas em Tempo Real (Planta)":
-    st.subheader("Simulação Dinâmica de Ondas Wi-Fi sobre Planta Residencial")
-    st.write("Arraste os cursores para posicionar o roteador na planta e visualizar as frentes de onda e as paredes estruturais.")
+if pagina == "Simulador Visual de Planta & Casa":
+    st.subheader("🏡 Maquete Interativa da Residência & Distribuição de Sinal")
+    st.write(
+        "Visualize o layout estrutural da casa (com paredes e divisões de cômodos). "
+        "Escolha onde o roteador está posicionado para ver em tempo real como o sinal interage com o ambiente."
+    )
 
-    c_pos1, c_pos2 = st.columns(2)
-    with c_pos1:
-        pos_roteador_x = st.slider("Posição X do Roteador (Largura)", 0.5, 9.5, 5.0, 0.5)
-    with c_pos2:
-        pos_roteador_y = st.slider("Posição Y do Roteador (Comprimento)", 0.5, 7.5, 6.5, 0.5)
+    c_op1, c_op2 = st.columns(2)
+    with c_op1:
+        local_roteador = st.selectbox(
+            "Posição do Roteador na Casa",
+            ["Sala de Estar (Perto da TV)", "Corredor Central", "Cozinha"]
+        )
+    with c_op2:
+        plano_contratado = st.number_input("Plano de Internet Contratado (Mbps)", value=500, step=50)
 
-    res = 60
-    x_vals = np.linspace(0, 10, res)
-    y_vals = np.linspace(0, 8, res)
-    X_grid, Y_grid = np.meshgrid(x_vals, y_vals)
+    # Coordenadas do Roteador com base na escolha
+    if "Sala" in local_roteador:
+        rx, ry = 2.0, 6.0
+    elif "Corredor" in local_roteador:
+        rx, ry = 5.0, 4.0
+    else:
+        rx, ry = 8.0, 6.0
 
-    Z_wave = np.zeros_like(X_grid)
-    for i in range(res):
-        for j in range(res):
-            x_p, y_p = X_grid[i, j], Y_grid[i, j]
-            dist = np.sqrt((x_p - pos_roteador_x)**2 + (y_p - pos_roteador_y)**2)
-            
-            paredes = 0
-            if (4.0 <= y_p <= 4.3) and not (3.5 <= x_p <= 6.5): 
-                paredes += 1
-            if (4.8 <= x_p <= 5.2) and (y_p >= 4.0):
-                paredes += 1
+    # Construção da Planta Baixa Gráfica com Plotly (Paredes, Cômodos e Móveis)
+    fig_casa = go.Figure()
 
-            onda = np.sin(dist * 7.0) * 3.5 
-            rssi_val = estimar_rssi(dist, obstaculos=paredes + (2 if dist > 4 else 0))
-            Z_wave[i, j] = rssi_val + onda
+    # Desenho dos Cômodos (Retângulos da Planta)
+    # Sala de Estar
+    fig_casa.add_shape(type="rect", x0=0, y0=4, x1=5, y1=8, fillcolor="#e0f2fe", opacity=0.5, line=dict(color="#0284c7", width=3))
+    fig_casa.add_annotation(x=2.5, y=6.0, text="<b>Sala de Estar</b><br>(Sofá, TV)", showarrow=False, font=dict(color="#0369a1", size=12))
 
-    fig_wave = go.Figure(data=go.Contour(
-        z=Z_wave,
-        x=x_vals,
-        y=y_vals,
-        colorscale='Tealgrn',
-        ncontours=30,
-        colorbar=dict(title="RSSI (dBm)")
-    ))
+    # Cozinha / Área de Serviço
+    fig_casa.add_shape(type="rect", x0=5, y0=4, x1=10, y1=8, fillcolor="#fef3c7", opacity=0.5, line=dict(color="#d97706", width=3))
+    fig_casa.add_annotation(x=7.5, y=6.0, text="<b>Cozinha</b><br>(Geladeira, Fogão)", showarrow=False, font=dict(color="#92400e", size=12))
 
-    # Paredes da Planta
-    fig_wave.add_shape(type="rect", x0=0, y0=0, x1=10, y1=8, line=dict(color="#06b6d4", width=3))
-    fig_wave.add_shape(type="line", x0=0, y0=4, x1=3.5, y1=4, line=dict(color="#06b6d4", width=2))
-    fig_wave.add_shape(type="line", x0=6.5, y0=4, x1=10, y1=4, line=dict(color="#06b6d4", width=2))
-    fig_wave.add_shape(type="line", x0=5, y0=4, x1=5, y1=8, line=dict(color="#06b6d4", width=2))
-    fig_wave.add_shape(type="line", x0=3.5, y0=0, x1=3.5, y1=2.5, line=dict(color="#06b6d4", width=2))
+    # Quarto 1
+    fig_casa.add_shape(type="rect", x0=0, y0=0, x1=5, y1=4, fillcolor="#f1f5f9", opacity=0.5, line=dict(color="#64748b", width=3))
+    fig_casa.add_annotation(x=2.5, y=2.0, text="<b>Quarto 1</b><br>(Cama Casal)", showarrow=False, font=dict(color="#334155", size=12))
 
-    fig_wave.add_annotation(x=2.0, y=6.0, text="<b>Sala de Estar</b>", showarrow=False, font=dict(color="white", size=11))
-    fig_wave.add_annotation(x=7.5, y=6.0, text="<b>Cozinha</b>", showarrow=False, font=dict(color="white", size=11))
-    fig_wave.add_annotation(x=2.5, y=2.0, text="<b>Quarto 1</b>", showarrow=False, font=dict(color="white", size=11))
-    fig_wave.add_annotation(x=7.5, y=2.0, text="<b>Quarto 2</b>", showarrow=False, font=dict(color="white", size=11))
+    # Quarto 2 (Suíte / Fundos)
+    fig_casa.add_shape(type="rect", x0=5, y0=0, x1=10, y1=4, fillcolor="#f1f5f9", opacity=0.5, line=dict(color="#64748b", width=3))
+    fig_casa.add_annotation(x=7.5, y=2.0, text="<b>Quarto 2 / Suíte</b><br>(Escritório / Cama)", showarrow=False, font=dict(color="#334155", size=12))
 
-    fig_wave.add_trace(go.Scatter(
-        x=[pos_roteador_x],
-        y=[pos_roteador_y],
+    # Adicionar o Roteador na Planta
+    fig_casa.add_trace(go.Scatter(
+        x=[rx], y=[ry],
         mode='markers+text',
-        marker=dict(size=16, color='#06b6d4', symbol='star'),
-        text=["Roteador"],
+        marker=dict(size=22, color='#0284c7', symbol='diamond'),
+        text=["<b>Roteador Wi-Fi</b>"],
         textposition="top center"
     ))
 
-    fig_wave.update_layout(
-        title="Propagação de Ondas sobre Planta Baixa",
-        xaxis_title="Largura (m)",
-        yaxis_title="Comprimento (m)",
-        paper_bgcolor="#090d16",
-        plot_bgcolor="#0f172a",
-        font=dict(color="white"),
-        height=500,
-        margin=dict(l=20, r=20, t=40, b=20)
+    fig_casa.update_layout(
+        title="Planta Baixa Arquitetônica & Posicionamento de Hardware",
+        xaxis=dict(range=[-0.5, 10.5], showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(range=[-0.5, 8.5], showgrid=False, zeroline=False, showticklabels=False),
+        paper_bgcolor="#ffffff",
+        plot_bgcolor="#ffffff",
+        height=400,
+        margin=dict(l=10, r=10, t=40, b=10)
     )
 
-    st.plotly_chart(fig_wave, use_container_width=True)
-    st.success("Simulação dinâmica carregada com sucesso!")
+    st.plotly_chart(fig_casa, use_container_width=True)
 
-# =========================
-# 2. GERADOR DE PLANTA BAIXA AUTOMATIZADO
-# =========================
-elif pagina == "Gerador de Planta Baixa (500Mb)":
-    st.subheader("Planta Baixa Automatizada & Plano de 500 Mbps")
+    # Diagnóstico Inteligente para o Cliente/Banca
+    st.markdown("### 📊 Diagnóstico de Cobertura por Ambiente")
     
-    with st.form("form_planta"):
-        tipo_casa = st.selectbox("Tipologia", ["2 Quartos, 1 Banheiro, Sala Conjugada", "3 Quartos, 2 Banheiros, Sala e Cozinha"])
-        local_rot = st.selectbox("Localização do Roteador", ["Sala de Estar", "Corredor Central", "Cozinha"])
-        plano = st.number_input("Plano Contratado (Mbps)", value=500)
-        btn_planta = st.form_submit_button("Gerar Análise")
+    # Cálculo simulado para cada cômodo com base na distância ao roteador escolhido
+    ambientes = [
+        {"nome": "Sala de Estar", "x": 2.5, "y": 6.0, "paredes": 0 if "Sala" in local_roteador else 1},
+        {"nome": "Cozinha", "x": 7.5, "y": 6.0, "paredes": 1 if "Cozinha" in local_roteador else 2},
+        {"nome": "Quarto 1", "x": 2.5, "y": 2.0, "paredes": 2},
+        {"nome": "Quarto 2 (Fundos)", "x": 7.5, "y": 2.0, "paredes": 3},
+    ]
 
-    if btn_planta:
-        st.info(f"Análise gerada para {tipo_casa} com roteador na {local_rot}.")
-        st.success("Cálculo de atenuação por cômodo executado com sucesso pela RNA!")
+    col1, col2 = st.columns(2)
+    for i, amb in enumerate(ambientes):
+        dist = np.sqrt((amb["x"] - rx)**2 + (amb["y"] - ry)**2)
+        rssi = estimar_rssi(dist, amb["paredes"])
+        vel_util = estimar_velocidade(rssi, plano_contratado)
+        qualidade = classificar_qualidade(rssi)
+
+        with (col1 if i % 2 == 0 else col2):
+            st.markdown(
+                f"""
+                <div class='metric-card'>
+                    <h4 style='margin-top: 0;'>📍 {amb['nome']}</h4>
+                    <p style='margin: 4px 0;'><b>Qualidade:</b> {qualidade}</p>
+                    <p style='margin: 4px 0;'><b>Velocidade Real:</b> <span style='color: #0284c7; font-size: 18px; font-weight: bold;'>{vel_util} Mbps</span> / {plano_contratado} Mbps</p>
+                    <p style='margin: 4px 0; font-size: 12px; color: #64748b;'>Distância do Roteador: {dist:.1f}m | Barreiras: {amb['paredes']} paredes</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+    st.info(
+        "💡 **Didática para a Apresentação:** A planta mostra claramente como as paredes e os móveis geram atenuação no sinal. "
+        "Nos cômodos distantes (como o Quarto 2), a perda de velocidade justifica perfeitamente a oferta de um ponto Mesh adicional."
+    )
 
 # =========================
-# 3. SIMULAÇÃO 3D INTERATIVA
-# =========================
-elif pagina == "Simulação 3D Interativa":
-    st.subheader("Simulação 3D de Propagação Volumétrica")
-    obst = st.slider("Obstáculos no Caminho", 0, 5, 2)
-    
-    n = 20
-    x = np.linspace(0, 10, n)
-    y = np.linspace(0, 8, n)
-    X3, Y3 = np.meshgrid(x, y)
-    Z3 = np.zeros_like(X3, dtype=float)
-    for i in range(n):
-        for j in range(n):
-            d = np.sqrt((X3[i,j]-5)**2 + (Y3[i,j]-4)**2)
-            Z3[i,j] = estimar_rssi(d, obst)
-
-    fig3d = go.Figure(data=[go.Surface(z=Z3, x=X3, y=Y3, colorscale='Tealgrn', cmin=-90, cmax=-40)])
-    fig3d.update_layout(paper_bgcolor="#090d16", plot_bgcolor="#0f172a", font=dict(color="white"), height=450)
-    st.plotly_chart(fig3d, use_container_width=True)
-
-# =========================
-# 4. CONSULTORIA COMERCIAL (ISP)
+# 2. CONSULTORIA COMERCIAL & UPGRADE MESH (ISP)
 # =========================
 elif pagina == "Consultoria Comercial & Upgrade Mesh (ISP)":
-    st.subheader("Módulo Comercial ISP: Monetização de Rede")
-    
-    with st.form("form_isp"):
-        cliente = st.text_input("Nome do Cliente", value="Assinante Residencial")
-        plano_isp = st.selectbox("Plano Atual", [300, 500, 1000], index=1)
-        paredes_isp = st.slider("Paredes até o cômodo crítico", 1, 5, 3)
-        btn_isp = st.form_submit_button("Gerar Proposta Comercial")
+    st.subheader("💼 Módulo Comercial ISP: Fechamento de Vendas & Retenção")
+    st.write(
+        "Ferramenta de vendas para o atendente do provedor demonstrar de forma simples e visual ao assinante "
+        "o motivo de sua internet rápida não chegar em todos os cômodos, oferecendo um upgrade de valor mensal."
+    )
 
-    if btn_isp:
-        st.markdown(
-            "<div class='commercial-card'>"
-            "<h3>Proposta Comercial Automática</h3>"
-            f"<p><b>Cliente:</b> {cliente}</p>"
-            f"<p><b>Plano:</b> {plano_isp} Mbps</p>"
-            "<p><b>Recomendação:</b> Instalação de 1 Nó Mesh adicional.</p>"
-            "<p><b>Upsell Sugerido:</b> +R$ 19,90/mês para cobertura total garantida.</p>"
-            "</div>",
-            unsafe_allow_html=True
-        )
-
-# =========================
-# 5. SIMULADOR TÉRMICO GERAL
-# =========================
-elif pagina == "Simulador Térmico Geral":
-    st.subheader("Mapa Térmico de Cobertura")
-    larg = st.number_input("Largura (m)", 5.0, 20.0, 10.0)
-    comp = st.number_input("Comprimento (m)", 5.0, 20.0, 8.0)
-    
-    xs = np.linspace(0, larg, 25)
-    ys = np.linspace(0, comp, 25)
-    Xm, Ym = np.meshgrid(xs, ys)
-    Zm = np.zeros_like(Xm)
-    for i in range(25):
-        for j in range(25):
-            Zm[i,j] = estimar_rssi(np.sqrt((Xm[i,j]-larg/2)**2 + (Ym[i,j]-comp/2)**2), 2)
-
-    fig, ax = plt.subplots(figsize=(8, 4))
-    fig.patch.set_facecolor('#090d16')
-    ax.set_facecolor('#0f172a')
-    im = ax.imshow(Zm, origin="lower", extent=[0, larg, 0, comp], aspect="auto", cmap="Tealgrn", vmin=-90, vmax=-40)
-    fig.colorbar(im, ax=ax)
-    st.pyplot(fig)
-    plt.close(fig)
-
-# =========================
-# 6. SUPORTE N1/N2 & HISTÓRICO
-# =========================
-elif pagina == "Suporte N1/N2 & Histórico":
-    st.subheader("Registo de Ordens de Serviço")
-    
-    with st.form("form_os"):
-        os_num = st.text_input("Número da OS", value="OS-1024")
-        tecnico = st.text_input("Técnico", value="Suporte N1")
-        rssi_med = st.number_input("RSSI Medido (dBm)", value=-68.0)
-        parecer = st.text_area("Parecer Técnico")
-        btn_os = st.form_submit_button("Registar Atendimento")
-
-    if btn_os:
-        salvar_atendimento({
-            "Data": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "OS": os_num,
-            "Técnico": tecnico,
-            "RSSI": rssi_med,
-            "Parecer": parecer
-        })
-        st.success("Atendimento registado com sucesso!")
-
-    st.divider()
-    st.markdown("### Histórico Salvo")
-    hist = carregar_historico()
-    if not hist.empty:
-        st.dataframe(hist, use_container_width=True)
-    else:
-        st.info("Nenhum registo encontrado.")
-
-st.divider()
-st.markdown("<p style='text-align: center; color: #64748b; font-size: 13px;'>WiFiLab Pro — Criado e Desenvolvido por <b>Dayrlane Sousa</b> | TCC Engenharia de Redes</p>", unsafe_allow_html=True)
+    with st.form("form_comercial_novo"):
+        c1, c2 = st.columns(2)
+        with c1:
+            nome_ass = st.text_input("Nome do Assinante", value="Maria Oliveira")
+            plano_atual = st.selectbox("Plano Contratado", [300, 500, 700, 1000], index=1)
+            local_fraco = st.selectbox("Onde o sinal está ruim?", ["Quarto dos Fundos", "Escritório / Home Office", "Área de Lazer"])
+        with c2:
+            distancia_lenta = st.slider("Distância estimada (metros)", 4.0, 18.0, 9.0, 0.5)
+            num_paredes = st.slider("Paredes no trajeto", 1, 5, 3)
