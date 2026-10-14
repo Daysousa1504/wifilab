@@ -14,31 +14,83 @@ from sklearn.metrics import mean_absolute_error
 # CONFIGURAÇÃO DO APLICATIVO
 # =========================
 st.set_page_config(
-    page_title="WiFiLab Pro",
+    page_title="WiFiLab",
     page_icon="📶",
     layout="wide"
 )
 
+# Estilização inspirada na paleta da logo (Azul corporativo, Ciano/Verde-água e Branco limpo)
 st.markdown(
-    "<style>"
-    ".stApp { background-color: #0e1117; color: #ffffff; }"
-    ".block-container { padding-top: 1.5rem; }"
-    "[data-testid='stSidebar'] { background-color: #161b22; }"
-    "[data-testid='stSidebar'] * { color: #ffffff; }"
-    ".room-card { background-color: #1b212c; border: 1px solid #30363d; padding: 15px; border-radius: 8px; margin-bottom: 10px; }"
-    ".commercial-card { background: linear-gradient(135deg, #1b212c 0%, #10243a 100%); border: 2px solid #58a6ff; padding: 20px; border-radius: 12px; margin-bottom: 15px; }"
-    "</style>",
+    """
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        
+        .stApp { 
+            background: linear-gradient(135deg, #090d16 0%, #0f172a 100%); 
+            color: #f8fafc; 
+            font-family: 'Inter', sans-serif;
+        }
+        .block-container { padding-top: 1.5rem; }
+        
+        [data-testid='stSidebar'] { 
+            background: linear-gradient(180deg, #0f172a 0%, #090d16 100%);
+            border-right: 1px solid #1e293b; 
+        }
+        [data-testid='stSidebar'] * { color: #f1f5f9; }
+        
+        .room-card { 
+            background: rgba(30, 41, 59, 0.7); 
+            border: 1px solid #06b6d4; 
+            padding: 15px; 
+            border-radius: 10px; 
+            margin-bottom: 10px; 
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.1);
+        }
+        
+        .commercial-card { 
+            background: linear-gradient(135deg, #0f172a 0%, #0b3c5d 100%); 
+            border: 2px solid #06b6d4; 
+            padding: 20px; 
+            border-radius: 12px; 
+            margin-bottom: 15px; 
+            box-shadow: 0 8px 24px rgba(6, 182, 212, 0.15);
+        }
+        
+        .stButton>button {
+            background: linear-gradient(90deg, #0284c7 0%, #06b6d4 100%);
+            color: white;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            transition: all 0.3s ease;
+        }
+        .stButton>button:hover {
+            opacity: 0.9;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.5);
+        }
+    </style>
+    """,
     unsafe_allow_html=True
 )
 
 # =========================
-# IDENTIDADE & CRÉDITOS NA SIDEBAR
+# LOGO OFICIAL & CRÉDITOS NA SIDEBAR
 # =========================
+try:
+    st.sidebar.image("WA_1791973476738.png", use_container_width=True)
+except Exception:
+    st.sidebar.markdown(
+        "<div style='text-align: center; padding: 15px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 12px; border: 1px solid #06b6d4; margin-bottom: 15px;'>"
+        "<h2 style='color: #06b6d4; margin: 0;'>WiFiLab</h2>"
+        "</div>",
+        unsafe_allow_html=True
+    )
+
 st.sidebar.markdown(
-    "<div style='text-align: center; padding: 12px; background-color: #1b212c; border-radius: 8px; border: 1px solid #30363d; margin-bottom: 10px;'>"
-    "<h2 style='color: #58a6ff; margin: 0;'>📶 WiFiLab</h2>"
-    "<p style='font-size: 13px; color: #e6edf3; margin: 4px 0 2px 0; font-weight: bold;'>Desenvolvido por Dayrlane Sousa</p>"
-    "<p style='font-size: 11px; color: #8b949e; margin: 0;'>Simulador de Ondas & ISP Pro</p>"
+    "<div style='text-align: center; padding: 8px 0 15px 0;'>"
+    "<p style='font-size: 13px; color: #e2e8f0; margin: 0; font-weight: bold;'>Criado por Dayrlane Sousa</p>"
+    "<p style='font-size: 11px; color: #06b6d4; margin: 2px 0 0 0;'>TCC Engenharia de Redes</p>"
     "</div>",
     unsafe_allow_html=True
 )
@@ -130,7 +182,7 @@ pagina = st.sidebar.radio(
 )
 
 st.sidebar.divider()
-st.sidebar.caption("WiFiLab | Protótipo Académico TCC")
+st.sidebar.caption("WiFiLab Pro | Plataforma Oficial ISPs")
 
 # =========================
 # 1. PROPAGAÇÃO DE ONDAS EM TEMPO REAL SOBRE PLANTA
@@ -170,17 +222,17 @@ if pagina == "Propagação de Ondas em Tempo Real (Planta)":
         z=Z_wave,
         x=x_vals,
         y=y_vals,
-        colorscale='Viridis',
+        colorscale='Tealgrn',
         ncontours=30,
         colorbar=dict(title="RSSI (dBm)")
     ))
 
     # Paredes da Planta
-    fig_wave.add_shape(type="rect", x0=0, y0=0, x1=10, y1=8, line=dict(color="white", width=3))
-    fig_wave.add_shape(type="line", x0=0, y0=4, x1=3.5, y1=4, line=dict(color="white", width=2))
-    fig_wave.add_shape(type="line", x0=6.5, y0=4, x1=10, y1=4, line=dict(color="white", width=2))
-    fig_wave.add_shape(type="line", x0=5, y0=4, x1=5, y1=8, line=dict(color="white", width=2))
-    fig_wave.add_shape(type="line", x0=3.5, y0=0, x1=3.5, y1=2.5, line=dict(color="white", width=2))
+    fig_wave.add_shape(type="rect", x0=0, y0=0, x1=10, y1=8, line=dict(color="#06b6d4", width=3))
+    fig_wave.add_shape(type="line", x0=0, y0=4, x1=3.5, y1=4, line=dict(color="#06b6d4", width=2))
+    fig_wave.add_shape(type="line", x0=6.5, y0=4, x1=10, y1=4, line=dict(color="#06b6d4", width=2))
+    fig_wave.add_shape(type="line", x0=5, y0=4, x1=5, y1=8, line=dict(color="#06b6d4", width=2))
+    fig_wave.add_shape(type="line", x0=3.5, y0=0, x1=3.5, y1=2.5, line=dict(color="#06b6d4", width=2))
 
     fig_wave.add_annotation(x=2.0, y=6.0, text="<b>Sala de Estar</b>", showarrow=False, font=dict(color="white", size=11))
     fig_wave.add_annotation(x=7.5, y=6.0, text="<b>Cozinha</b>", showarrow=False, font=dict(color="white", size=11))
@@ -191,7 +243,7 @@ if pagina == "Propagação de Ondas em Tempo Real (Planta)":
         x=[pos_roteador_x],
         y=[pos_roteador_y],
         mode='markers+text',
-        marker=dict(size=16, color='red', symbol='star'),
+        marker=dict(size=16, color='#06b6d4', symbol='star'),
         text=["Roteador"],
         textposition="top center"
     ))
@@ -200,8 +252,8 @@ if pagina == "Propagação de Ondas em Tempo Real (Planta)":
         title="Propagação de Ondas sobre Planta Baixa",
         xaxis_title="Largura (m)",
         yaxis_title="Comprimento (m)",
-        paper_bgcolor="#0e1117",
-        plot_bgcolor="#1b212c",
+        paper_bgcolor="#090d16",
+        plot_bgcolor="#0f172a",
         font=dict(color="white"),
         height=500,
         margin=dict(l=20, r=20, t=40, b=20)
@@ -243,8 +295,8 @@ elif pagina == "Simulação 3D Interativa":
             d = np.sqrt((X3[i,j]-5)**2 + (Y3[i,j]-4)**2)
             Z3[i,j] = estimar_rssi(d, obst)
 
-    fig3d = go.Figure(data=[go.Surface(z=Z3, x=X3, y=Y3, colorscale='RdYlGn', cmin=-90, cmax=-40)])
-    fig3d.update_layout(paper_bgcolor="#0e1117", font=dict(color="white"), height=450)
+    fig3d = go.Figure(data=[go.Surface(z=Z3, x=X3, y=Y3, colorscale='Tealgrn', cmin=-90, cmax=-40)])
+    fig3d.update_layout(paper_bgcolor="#090d16", plot_bgcolor="#0f172a", font=dict(color="white"), height=450)
     st.plotly_chart(fig3d, use_container_width=True)
 
 # =========================
@@ -288,9 +340,9 @@ elif pagina == "Simulador Térmico Geral":
             Zm[i,j] = estimar_rssi(np.sqrt((Xm[i,j]-larg/2)**2 + (Ym[i,j]-comp/2)**2), 2)
 
     fig, ax = plt.subplots(figsize=(8, 4))
-    fig.patch.set_facecolor('#0e1117')
-    ax.set_facecolor('#1b212c')
-    im = ax.imshow(Zm, origin="lower", extent=[0, larg, 0, comp], aspect="auto", cmap="RdYlGn", vmin=-90, vmax=-40)
+    fig.patch.set_facecolor('#090d16')
+    ax.set_facecolor('#0f172a')
+    im = ax.imshow(Zm, origin="lower", extent=[0, larg, 0, comp], aspect="auto", cmap="Tealgrn", vmin=-90, vmax=-40)
     fig.colorbar(im, ax=ax)
     st.pyplot(fig)
     plt.close(fig)
@@ -327,4 +379,4 @@ elif pagina == "Suporte N1/N2 & Histórico":
         st.info("Nenhum registo encontrado.")
 
 st.divider()
-st.markdown("<p style='text-align: center; color: #8b949e; font-size: 13px;'>WiFiLab Pro — Criado e Desenvolvido por <b>Dayrlane Sousa</b> | TCC Engenharia de Redes</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #64748b; font-size: 13px;'>WiFiLab Pro — Criado e Desenvolvido por <b>Dayrlane Sousa</b> | TCC Engenharia de Redes</p>", unsafe_allow_html=True)
