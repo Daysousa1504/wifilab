@@ -493,7 +493,7 @@ else:
 
 
 st.divider()
-st.markdown("<p style='text-align: center; color: #64748b; font-size: 13px;'>WiFiLab Pro — Criado e Desenvolvido por <b>Dayrlane Sousa</b> | TCC Ciencias e Tecnologia</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #64748b; font-size: 13px;'>WiFiLab Pro — Criado e Desenvolvido por <b>Dayrlane Sousa</b> | TCC Ciencias e Tecnologia- ifpa</p>", unsafe_allow_html=True)
 
 
         
