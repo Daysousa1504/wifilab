@@ -433,4 +433,67 @@ elif pagina == "Suporte Técnico & Histórico de O.S.":
         st.download_button("Descarregar Relatório CSV", data=csv, file_name="relatorio_wifilab.csv", mime="text/csv")
 
 st.divider()
-st.markdown("<p style='text-align: center; color: #64748b; font-size: 13px;'>WiFiLab Pro — Criado e Desenvolvido por <b>Dayrlane Sousa</b> | TCC Engenharia de Redes</p>", unsafe_allow_html=True)
+st.markdown("### 📋 Dados de Coleta de Campo (Google Sheets)")
+df_campo = carregar_dados_campo()
+
+if df_campo is not None:
+    st.dataframe(df_campo, use_container_width=True)
+else:
+    st.info("A aguardar dados da planilha de campo...")
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.interpolate import griddata
+import streamlit as st
+
+st.subheader("📡 Módulo de Diagnóstico Automático e Heatmap do Provedor")
+
+df_campo = carregar_dados_campo()
+
+if df_campo is not None and not df_campo.empty:
+    # Certifique-se de que a planilha tem colunas 'X', 'Y' (coordenadas no piso) e 'RSSI_dBm'
+    if all(col in df_campo.columns for col in ['X', 'Y', 'RSSI_dBm']):
+        
+        st.success("🤖 Motor de IA e Interpolação Espacial Ativo: Gerando mapa de calor da residência...")
+        
+        # Extrair coordenadas e valores de RSSI recolhidos em campo
+        points = df_campo[['X', 'Y']].values
+        values = df_campo['RSSI_dBm'].values
+        
+        # Criar a malha (grid) da casa para preencher os espaços entre os cômodos
+        grid_x, grid_y = np.mgrid[min(points[:,0]):max(points[:,0]):100j, 
+                                  min(points[:,1]):max(points[:,1]):100j]
+        
+        # Interpolação cúbica/linear dos pontos medidos pelo técnico
+        grid_z = griddata(points, values, (grid_x, grid_y), method='cubic')
+        
+        # Plotar o Mapa de Calor (Heatmap) semelhante ao WiFiman
+        fig, ax = plt.subplots(figsize=(8, 6))
+        cax = ax.imshow(grid_z.T, extent=(min(points[:,0]), max(points[:,0]), min(points[:,1]), max(points[:,1])), 
+                        origin='lower', cmap='RdYlGn', interpolation='bicubic', vmin=-80, vmax=-40)
+        
+        # Adicionar os pontos exatos onde o técnico mediu
+        ax.scatter(points[:,0], points[:,1], c=values, cmap='RdYlGn', edgecolor='black', s=100, vmin=-80, vmax=-40)
+        
+        fig.colorbar(cax, label='Intensidade do Sinal (RSSI dBm)')
+        ax.set_title("Mapa de Calor Térmico Automatizado - Cobertura Wi-Fi")
+        ax.set_xlabel("Eixo X (Metros)")
+        ax.set_ylabel("Eixo Y (Metros)")
+        
+        st.pyplot(fig)
+        
+        # Diagnóstico automático para o técnico do provedor
+        pior_sinal = df_campo.loc[df_campo['RSSI_dBm'].idxmin()]
+        st.warning(f"⚠️ **Ponto Crítico Identificado pela IA:** {pior_sinal.get('Ambiente', 'Área externa')} com RSSI de {pior_sinal['RSSI_dBm']} dBm. Recomenda-se a instalação de um repetidor/mesh nesta zona.")
+        
+    else:
+        st.info("ℹ️ Para gerar o mapa de calor automático, certifique-se de que a planilha de campo possui as colunas de coordenadas **X** e **Y** (além de `RSSI_dBm` e `Ambiente`).")
+else:
+    st.info("A aguardar dados de campo para processamento automático...")
+
+
+st.divider()
+st.markdown("<p style='text-align: center; color: #64748b; font-size: 13px;'>WiFiLab Pro — Criado e Desenvolvido por <b>Dayrlane Sousa</b> | TCC Ciencias e Tecnologia</p>", unsafe_allow_html=True)
+
+
+        
